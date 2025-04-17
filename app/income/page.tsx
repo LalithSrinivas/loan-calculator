@@ -9,8 +9,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  BarChart,
+  Bar,
 } from 'recharts';
 import { Switch } from '@headlessui/react';
 import {
@@ -19,6 +23,7 @@ import {
   calculateIncomeSummary,
 } from '../utils/incomeCalculations';
 import { formatCurrency } from '../utils/currencyFormatter';
+import GraphToggle from '../components/GraphToggle';
 
 /**
  * Income Growth Calculator Component
@@ -39,6 +44,7 @@ export default function IncomeGrowth() {
   // State for calculation results
   const [schedule, setSchedule] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
+  const [isAdvanced, setIsAdvanced] = useState(false);
 
   // Recalculate when parameters change
   useEffect(() => {
@@ -71,6 +77,36 @@ export default function IncomeGrowth() {
       growth: row.growth,
     }));
   };
+
+  /**
+   * Prepares data for the contribution breakdown pie chart
+   */
+  const getContributionBreakdown = () => {
+    if (!summary) return [];
+    return [
+      { name: 'Initial Amount', value: params.initialAmount },
+      { name: 'Total Contributions', value: summary.totalContributions },
+      { name: 'Total Growth', value: summary.totalGrowth }
+    ];
+  };
+
+  /**
+   * Prepares data for the growth rate comparison chart
+   */
+  const getGrowthRateComparison = () => {
+    const rates = [params.annualGrowthRate - 2, params.annualGrowthRate, params.annualGrowthRate + 2];
+    return rates.map(rate => {
+      const adjustedParams = { ...params, annualGrowthRate: rate };
+      const adjustedSchedule = calculateFutureValue(adjustedParams);
+      const adjustedSummary = calculateIncomeSummary(adjustedSchedule);
+      return {
+        rate: `${rate}%`,
+        finalBalance: adjustedSummary.finalBalance
+      };
+    });
+  };
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -227,76 +263,139 @@ export default function IncomeGrowth() {
               </div>
             </div>
 
-            {/* Investment Growth Chart */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Investment Growth</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={getGraphData()}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis 
-                      tickFormatter={(value) => formatCurrency(value)}
-                      width={100}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                      labelFormatter={(label) => `Year ${label}`}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="balance"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                      name="Total Balance"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            {/* Graph Toggle */}
+            <GraphToggle isAdvanced={isAdvanced} onToggle={setIsAdvanced} />
 
-            {/* Contributions vs Growth Chart */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Contributions vs Growth</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={getGraphData()}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="year" />
-                    <YAxis 
-                      tickFormatter={(value) => formatCurrency(value)}
-                      width={100}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => formatCurrency(value)}
-                      labelFormatter={(label) => `Year ${label}`}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="contributions"
-                      stackId="1"
-                      stroke="#82ca9d"
-                      fill="#82ca9d"
-                      name="Contributions"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="growth"
-                      stackId="1"
-                      stroke="#ffc658"
-                      fill="#ffc658"
-                      name="Growth"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            {/* Basic Graphs */}
+            {!isAdvanced && (
+              <>
+                {/* Investment Growth Chart */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Investment Growth</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={getGraphData()}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis 
+                          tickFormatter={(value) => formatCurrency(value)}
+                          width={100}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => formatCurrency(value)}
+                          labelFormatter={(label) => `Year ${label}`}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="balance"
+                          stroke="#8884d8"
+                          fill="#8884d8"
+                          name="Total Balance"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Contributions vs Growth Chart */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Contributions vs Growth</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={getGraphData()}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="year" />
+                        <YAxis 
+                          tickFormatter={(value) => formatCurrency(value)}
+                          width={100}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => formatCurrency(value)}
+                          labelFormatter={(label) => `Year ${label}`}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="contributions"
+                          stackId="1"
+                          stroke="#82ca9d"
+                          fill="#82ca9d"
+                          name="Contributions"
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="growth"
+                          stackId="1"
+                          stroke="#ffc658"
+                          fill="#ffc658"
+                          name="Growth"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Advanced Graphs */}
+            {isAdvanced && (
+              <>
+                {/* Contribution Breakdown Pie Chart */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Contribution Breakdown</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={getContributionBreakdown()}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {getContributionBreakdown().map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Growth Rate Comparison Chart */}
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Growth Rate Comparison</h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={getGrowthRateComparison()}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="rate" />
+                        <YAxis 
+                          tickFormatter={(value) => formatCurrency(value)}
+                          width={100}
+                        />
+                        <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                        <Bar dataKey="finalBalance" fill="#8884d8" name="Final Balance" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

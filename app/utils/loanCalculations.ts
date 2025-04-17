@@ -4,9 +4,9 @@ export interface LoanParams {
   loanAmount: number;
   annualInterestRate: number;
   loanTenureMonths: number;
-  extraPayment?: number;
-  extraPaymentFrequency?: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
-  extraPaymentStartMonth?: number;
+  extraPayment: number;
+  extraPaymentFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
+  extraPaymentStartMonth: number;
 }
 
 export interface AmortizationRow {
@@ -19,92 +19,105 @@ export interface AmortizationRow {
   totalPayment: number;
 }
 
-export const calculateEMI = (params: LoanParams): number => {
-  const P = new Decimal(params.loanAmount);
-  const r = new Decimal(params.annualInterestRate / 12 / 100); // Monthly interest rate
-  const n = new Decimal(params.loanTenureMonths);
+export function calculateEMI(params: LoanParams): number {
+  const principal = Math.max(0, params.loanAmount);
+  const ratePerMonth = (params.annualInterestRate / 12) / 100;
+  const tenure = Math.max(1, params.loanTenureMonths);
+
+  if (principal === 0 || tenure === 0) return 0;
+  if (params.annualInterestRate === 0) return principal / tenure;
+
+  const emi = (principal * ratePerMonth * Math.pow(1 + ratePerMonth, tenure)) / 
+              (Math.pow(1 + ratePerMonth, tenure) - 1);
   
-  const emi = P.times(r.times((Decimal.pow(r.plus(1), n))))
-    .dividedBy(Decimal.pow(r.plus(1), n).minus(1));
-    
-  return Number(emi.toFixed(2));
-};
+  return isFinite(emi) ? emi : 0;
+}
 
-export const generateAmortizationSchedule = (params: LoanParams): AmortizationRow[] => {
+export function generateAmortizationSchedule(params: LoanParams): AmortizationRow[] {
+  const emi = calculateEMI(params);
+  if (emi === 0) return [];
+
   const schedule: AmortizationRow[] = [];
-  let remainingBalance = new Decimal(params.loanAmount);
-  const monthlyInterestRate = new Decimal(params.annualInterestRate / 12 / 100);
-  const baseEMI = calculateEMI(params);
-  const startMonth = params.extraPaymentStartMonth || 1;
+  let remainingBalance = params.loanAmount;
+  let month = 1;
 
-  for (let month = 1; month <= params.loanTenureMonths && remainingBalance.greaterThan(0); month++) {
-    const interest = remainingBalance.times(monthlyInterestRate);
-    let principal = new Decimal(baseEMI).minus(interest);
-    let extraPayment = new Decimal(0);
+  while (remainingBalance > 0 && month <= params.loanTenureMonths) {
+    const ratePerMonth = (params.annualInterestRate / 12) / 100;
+    const interest = remainingBalance * ratePerMonth;
+    let principal = emi - interest;
+    let extraPayment = 0;
 
-    // Calculate extra payment if enabled and after start month
-    if (params.extraPayment && month >= startMonth) {
-      const monthsSinceStart = month - startMonth + 1;
-      
+    // Calculate extra payment if applicable
+    if (month >= params.extraPaymentStartMonth) {
       switch (params.extraPaymentFrequency) {
         case 'monthly':
-          extraPayment = new Decimal(params.extraPayment);
+          extraPayment = params.extraPayment;
           break;
         case 'quarterly':
-          if (monthsSinceStart % 3 === 0) {
-            extraPayment = new Decimal(params.extraPayment);
+          if ((month - params.extraPaymentStartMonth) % 3 === 0) {
+            extraPayment = params.extraPayment;
           }
           break;
         case 'semiannually':
-          if (monthsSinceStart % 6 === 0) {
-            extraPayment = new Decimal(params.extraPayment);
+          if ((month - params.extraPaymentStartMonth) % 6 === 0) {
+            extraPayment = params.extraPayment;
           }
           break;
         case 'annually':
-          if (monthsSinceStart % 12 === 0) {
-            extraPayment = new Decimal(params.extraPayment);
+          if ((month - params.extraPaymentStartMonth) % 12 === 0) {
+            extraPayment = params.extraPayment;
           }
           break;
       }
     }
 
-    // Adjust principal if it would overpay the loan
-    if (principal.plus(extraPayment).greaterThan(remainingBalance)) {
+    // Adjust principal payment with extra payment
+    principal += extraPayment;
+
+    // Ensure we don't overpay
+    if (principal > remainingBalance) {
       principal = remainingBalance;
-      extraPayment = new Decimal(0);
     }
 
-    remainingBalance = remainingBalance.minus(principal).minus(extraPayment);
+    remainingBalance -= principal;
 
     schedule.push({
       month,
-      payment: Number(new Decimal(baseEMI).toFixed(2)),
+      payment: Number(new Decimal(emi).toFixed(2)),
       principal: Number(principal.toFixed(2)),
       interest: Number(interest.toFixed(2)),
       remainingBalance: Number(remainingBalance.toFixed(2)),
       extraPayment: Number(extraPayment.toFixed(2)),
-      totalPayment: Number(new Decimal(baseEMI).plus(extraPayment).toFixed(2))
+      totalPayment: Number(new Decimal(emi).toFixed(2))
     });
 
-    if (remainingBalance.lessThanOrEqualTo(0)) break;
+    month++;
   }
 
   return schedule;
-};
+}
 
-export const calculateLoanSummary = (schedule: AmortizationRow[]) => {
-  const totalPayments = schedule.reduce((sum, row) => sum + row.totalPayment, 0);
+export function calculateLoanSummary(schedule: AmortizationRow[]) {
+  if (!schedule || schedule.length === 0) {
+    return {
+      monthlyEMI: 0,
+      totalPayments: 0,
+      totalInterest: 0,
+      totalExtraPayments: 0
+    };
+  }
+
   const totalInterest = schedule.reduce((sum, row) => sum + row.interest, 0);
-  const totalPrincipal = schedule.reduce((sum, row) => sum + row.principal + row.extraPayment, 0);
-  const actualTenure = schedule.length;
+  const totalExtraPayments = schedule.reduce((sum, row) => sum + row.extraPayment, 0);
+  const totalPayments = schedule.reduce((sum, row) => sum + row.principal + row.interest, 0);
 
   return {
-    totalPayments: Number(totalPayments.toFixed(2)),
-    totalInterest: Number(totalInterest.toFixed(2)),
-    totalPrincipal: Number(totalPrincipal.toFixed(2)),
-    actualTenure
+    monthlyEMI: schedule[0].payment,
+    totalPayments,
+    totalInterest,
+    totalExtraPayments
   };
-};
+}
 
 export const formatIndianCurrency = (value: number): string => {
   // Convert to absolute value for formatting
