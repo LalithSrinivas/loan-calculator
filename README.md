@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Loan Amortization Calculator
+
+A sophisticated web application for visualizing loan repayment scenarios with advanced features for calculating and comparing different loan parameters.
+
+## Features
+
+- Interactive loan parameter inputs with sliders and text fields
+- Real-time calculation of monthly payments and total interest
+- Extra payment options with flexible payment frequencies
+- Visual representation of payment breakdown and loan balance over time
+- Responsive design for all device sizes
+- Precise financial calculations using decimal.js
+
+## Technology Stack
+
+- Next.js 14
+- React
+- TypeScript
+- Tailwind CSS
+- Recharts for data visualization
+- Decimal.js for precise financial calculations
+- Headless UI for accessible components
 
 ## Getting Started
 
-First, run the development server:
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd loan-calculator
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Usage
 
-## Learn More
+1. Enter your loan parameters:
+   - Loan Amount (between $1,000 and $1,000,000)
+   - Annual Interest Rate (between 0.1% and 25%)
+   - Loan Tenure (between 1 and 30 years)
 
-To learn more about Next.js, take a look at the following resources:
+2. Optional: Enable extra payments
+   - Set extra payment amount
+   - Choose payment frequency (Monthly, Quarterly, Semi-Annually, Annually)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3. View results in real-time:
+   - Monthly payment amount
+   - Total interest paid
+   - Payment breakdown chart
+   - Loan balance over time
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Development
 
-## Deploy on Vercel
+- `app/components/LoanCalculator.tsx` - Main calculator component
+- `app/utils/loanCalculations.ts` - Financial calculation utilities
+- `app/page.tsx` - Main page component
+- `app/layout.tsx` - Root layout with metadata
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
