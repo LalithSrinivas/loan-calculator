@@ -1,3 +1,14 @@
+/**
+ * Formats a number as Indian currency (INR)
+ * 
+ * This function formats numbers according to Indian currency conventions:
+ * - Uses the Indian Rupee symbol (₹)
+ * - Formats large numbers in lakhs (L) and crores (Cr)
+ * - Uses Indian number formatting (e.g., 1,00,000 instead of 100,000)
+ * 
+ * @param amount - The number to format
+ * @returns Formatted currency string
+ */
 export const formatCurrency = (amount: number): string => {
   // Convert to absolute value for formatting
   const absoluteValue = Math.abs(amount);

@@ -1,78 +1,114 @@
-# Loan Amortization Calculator
+# Loan Calculator
 
-A sophisticated web application for visualizing loan repayment scenarios with advanced features for calculating and comparing different loan parameters.
+A comprehensive financial calculator application built with Next.js and TypeScript that helps users calculate and visualize various financial scenarios including loans, investments, and compound interest.
 
 ## Features
 
-- Interactive loan parameter inputs with sliders and text fields
-- Real-time calculation of monthly payments and total interest
-- Extra payment options with flexible payment frequencies
-- Visual representation of payment breakdown and loan balance over time
-- Responsive design for all device sizes
-- Precise financial calculations using decimal.js
+### 1. Loan Calculator
+- Calculate monthly EMI (Equated Monthly Installment)
+- Visualize loan amortization schedule
+- Track principal and interest payments over time
+- Support for extra payments with different frequencies
+- Detailed breakdown of total interest and principal payments
 
-## Technology Stack
+### 2. Income Growth Calculator
+- Calculate future value of investments
+- Support for different contribution frequencies (monthly, quarterly, annually, one-time)
+- Visualize investment growth over time
+- Track contributions vs. growth
+- Detailed summary of final balance and total growth
 
-- Next.js 14
-- React
-- TypeScript
-- Tailwind CSS
-- Recharts for data visualization
-- Decimal.js for precise financial calculations
-- Headless UI for accessible components
+### 3. Compound Scenario Calculator
+- Combine loan and investment scenarios
+- Calculate net possession over time
+- Track loan balance vs. investment growth
+- Visualize when loan will be paid off
+- Identify when net possession becomes positive
+
+## Tech Stack
+
+- **Frontend Framework**: Next.js 13+ with App Router
+- **Language**: TypeScript
+- **UI Components**: Tailwind CSS
+- **Charts**: Recharts
+- **State Management**: React Hooks
+- **Form Handling**: React controlled components
+- **Styling**: Tailwind CSS with custom components
 
 ## Getting Started
 
+### Prerequisites
+
+- Node.js 16.8 or later
+- npm or yarn package manager
+
+### Installation
+
 1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd loan-calculator
-   ```
+```bash
+git clone https://github.com/yourusername/loan-calculator.git
+cd loan-calculator
+```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+# or
+yarn install
+```
 
 3. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Usage
+## Project Structure
 
-1. Enter your loan parameters:
-   - Loan Amount (between $1,000 and $1,000,000)
-   - Annual Interest Rate (between 0.1% and 25%)
-   - Loan Tenure (between 1 and 30 years)
+```
+loan-calculator/
+├── app/
+│   ├── components/         # Reusable React components
+│   ├── utils/             # Utility functions and calculations
+│   ├── page.tsx           # Home page
+│   ├── income/            # Income growth calculator
+│   ├── compare/           # Loan comparison calculator
+│   └── compound/          # Compound scenario calculator
+├── public/                # Static assets
+└── package.json           # Project dependencies
+```
 
-2. Optional: Enable extra payments
-   - Set extra payment amount
-   - Choose payment frequency (Monthly, Quarterly, Semi-Annually, Annually)
+## Key Components
 
-3. View results in real-time:
-   - Monthly payment amount
-   - Total interest paid
-   - Payment breakdown chart
-   - Loan balance over time
+### Loan Calculator
+- `LoanCalculator.tsx`: Main component for loan calculations
+- `loanCalculations.ts`: Utility functions for loan calculations
 
-## Development
+### Income Growth Calculator
+- `income/page.tsx`: Main component for investment calculations
+- `incomeCalculations.ts`: Utility functions for investment calculations
 
-- `app/components/LoanCalculator.tsx` - Main calculator component
-- `app/utils/loanCalculations.ts` - Financial calculation utilities
-- `app/page.tsx` - Main page component
-- `app/layout.tsx` - Root layout with metadata
+### Compound Scenario Calculator
+- `compound/page.tsx`: Main component for combined scenarios
+- Combines functionality from both loan and investment calculators
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Next.js](https://nextjs.org/) for the amazing React framework
+- [Recharts](https://recharts.org/) for beautiful data visualization
+- [Tailwind CSS](https://tailwindcss.com/) for utility-first CSS framework

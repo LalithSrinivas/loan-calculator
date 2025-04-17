@@ -20,24 +20,38 @@ import {
 } from '../utils/incomeCalculations';
 import { formatCurrency } from '../utils/currencyFormatter';
 
+/**
+ * Income Growth Calculator Component
+ * 
+ * This component provides an interactive interface for calculating and visualizing
+ * investment growth over time with periodic contributions.
+ */
 export default function IncomeGrowth() {
+  // State for investment parameters
   const [params, setParams] = useState<IncomeParams>({
-    initialAmount: 100000,
-    periodicContribution: 10000,
+    initialAmount: 100000,        // Default initial investment
+    periodicContribution: 10000,  // Default monthly contribution
     contributionFrequency: 'monthly',
-    annualGrowthRate: 8,
-    timeHorizonMonths: 240,
+    annualGrowthRate: 8,          // Default 8% annual growth
+    timeHorizonMonths: 240,       // Default 20 years
   });
 
+  // State for calculation results
   const [schedule, setSchedule] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
 
+  // Recalculate when parameters change
   useEffect(() => {
     const newSchedule = calculateFutureValue(params);
     setSchedule(newSchedule);
     setSummary(calculateIncomeSummary(newSchedule));
   }, [params]);
 
+  /**
+   * Handles changes to input parameters
+   * @param field - The parameter being changed
+   * @param value - The new value
+   */
   const handleInputChange = (field: keyof IncomeParams, value: number | string) => {
     setParams(prev => ({
       ...prev,
@@ -45,6 +59,10 @@ export default function IncomeGrowth() {
     }));
   };
 
+  /**
+   * Processes schedule data for chart display
+   * @returns Array of yearly data points for charts
+   */
   const getGraphData = () => {
     return schedule.filter((_, index) => index % 12 === 0).map(row => ({
       year: Math.floor(row.month / 12),
@@ -57,6 +75,7 @@ export default function IncomeGrowth() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Income Growth Calculator
@@ -66,12 +85,13 @@ export default function IncomeGrowth() {
           </p>
         </div>
 
+        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-6">Investment Parameters</h2>
             <div className="space-y-6">
-              {/* Initial Amount */}
+              {/* Initial Amount Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Initial Amount
@@ -98,7 +118,7 @@ export default function IncomeGrowth() {
                 </div>
               </div>
 
-              {/* Periodic Contribution */}
+              {/* Periodic Contribution Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Periodic Contribution
@@ -125,7 +145,7 @@ export default function IncomeGrowth() {
                 </div>
               </div>
 
-              {/* Contribution Frequency */}
+              {/* Contribution Frequency Selector */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Contribution Frequency
@@ -142,7 +162,7 @@ export default function IncomeGrowth() {
                 </select>
               </div>
 
-              {/* Growth Rate */}
+              {/* Growth Rate Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Annual Growth Rate (%)
@@ -164,7 +184,7 @@ export default function IncomeGrowth() {
                 />
               </div>
 
-              {/* Time Horizon */}
+              {/* Time Horizon Input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Time Horizon (Years)
@@ -207,7 +227,7 @@ export default function IncomeGrowth() {
               </div>
             </div>
 
-            {/* Growth Chart */}
+            {/* Investment Growth Chart */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Investment Growth</h3>
               <div className="h-80">
