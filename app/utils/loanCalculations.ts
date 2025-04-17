@@ -145,3 +145,74 @@ export const formatIndianCurrency = (value: number): string => {
   
   return formatter.format(value);
 };
+
+interface LoanScheduleParams {
+  principal: number;
+  annualRate: number;
+  tenureMonths: number;
+  extraPayment: number;
+  extraPaymentFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
+}
+
+interface MonthlyLoanData {
+  month: number;
+  emi: number;
+  principal: number;
+  interest: number;
+  extraPayment: number;
+  totalPayment: number;
+  remainingBalance: number;
+}
+
+export function calculateLoanSchedule(params: LoanScheduleParams): MonthlyLoanData[] {
+  const monthlyRate = params.annualRate / 12 / 100;
+  const emi = calculateEMI({
+    loanAmount: params.principal,
+    annualInterestRate: params.annualRate,
+    loanTenureMonths: params.tenureMonths,
+    extraPayment: 0,
+    extraPaymentFrequency: 'monthly',
+    extraPaymentStartMonth: 1
+  });
+  
+  let data: MonthlyLoanData[] = [];
+  let remainingBalance = params.principal;
+
+  for (let month = 0; month <= params.tenureMonths && remainingBalance > 0; month++) {
+    const interest = remainingBalance * monthlyRate;
+    let principalComponent = emi - interest;
+    
+    // Calculate extra payment for this month
+    let extraPayment = 0;
+    if (params.extraPayment > 0) {
+      if (params.extraPaymentFrequency === 'monthly' ||
+         (params.extraPaymentFrequency === 'quarterly' && month % 3 === 0) ||
+         (params.extraPaymentFrequency === 'semiannually' && month % 6 === 0) ||
+         (params.extraPaymentFrequency === 'annually' && month % 12 === 0)) {
+        extraPayment = Math.min(params.extraPayment, remainingBalance - principalComponent);
+      }
+    }
+
+    // Adjust principal component if it's more than remaining balance
+    principalComponent = Math.min(principalComponent, remainingBalance);
+    
+    // Calculate total payment and new balance
+    const totalPayment = principalComponent + interest + extraPayment;
+    remainingBalance = Math.max(0, remainingBalance - principalComponent - extraPayment);
+
+    data.push({
+      month,
+      emi,
+      principal: principalComponent,
+      interest,
+      extraPayment,
+      totalPayment,
+      remainingBalance
+    });
+
+    // Break if loan is fully paid
+    if (remainingBalance === 0) break;
+  }
+
+  return data;
+}

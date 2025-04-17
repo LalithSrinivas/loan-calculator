@@ -123,4 +123,51 @@ export function formatIndianCurrency(amount: number): string {
     currency: 'INR',
     maximumFractionDigits: 0
   }).format(amount);
+}
+
+interface IncomeGrowthParams {
+  initialAmount: number;
+  monthlyContribution: number;
+  contributionFrequency: 'monthly' | 'annually';
+  annualGrowthRate: number;
+  timeHorizonMonths: number;
+}
+
+interface MonthlyIncomeData {
+  month: number;
+  totalValue: number;
+  totalContributions: number;
+  monthlyIncome: number;
+}
+
+export function calculateIncomeGrowth(params: IncomeGrowthParams): MonthlyIncomeData[] {
+  const monthlyRate = params.annualGrowthRate / 12 / 100;
+  const contributionAmount = params.monthlyContribution;
+  const contributionPeriods = params.contributionFrequency === 'annually' ? 12 : 1;
+  
+  let data: MonthlyIncomeData[] = [];
+  let currentAmount = params.initialAmount;
+  let totalContributions = params.initialAmount;
+
+  for (let month = 0; month <= params.timeHorizonMonths; month++) {
+    // Add contribution if it's time
+    if (params.contributionFrequency === 'monthly' || (params.contributionFrequency === 'annually' && month % 12 === 0)) {
+      const contribution = params.contributionFrequency === 'monthly' ? contributionAmount : contributionAmount * 12;
+      currentAmount += contribution;
+      totalContributions += contribution;
+    }
+
+    // Calculate growth for the month
+    const monthlyIncome = currentAmount * monthlyRate;
+    currentAmount += monthlyIncome;
+
+    data.push({
+      month,
+      totalValue: currentAmount,
+      totalContributions,
+      monthlyIncome
+    });
+  }
+
+  return data;
 } 
