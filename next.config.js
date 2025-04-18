@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  basePath: "/loan-calculator",
-  assetPrefix: "/loan-calculator/",
+  output: 'export',  // Enable static exports
+  basePath: '/loan-calculator', // Match your repository name
+  assetPrefix: '/loan-calculator/',
   images: {
-    unoptimized: true
+    unoptimized: true, // Required for static export
   },
+  trailingSlash: true, // Recommended for GitHub Pages
 };
 
-module.exports = nextConfig;
+module.exports = nextConfig; 

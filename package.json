@@ -8,8 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d out"
+    "predeploy": "next build && touch out/.nojekyll",
+    "deploy": "gh-pages -d out --nojekyll --cname https://lalithsrinivas.github.io/loan-calculator/"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",
