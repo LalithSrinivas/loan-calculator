@@ -8,6 +8,7 @@ import {
   Bar,
   ComposedChart,
   Area,
+  AreaChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,7 +17,7 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { calculateAdvancedMetrics } from '../utils/advancedCalculations';
+import { calculateAdvancedMetrics, calculateRemainingLoanBalance } from '../utils/advancedCalculations';
 
 interface AdvancedAnalysisProps {
   loanAmount: number;
@@ -141,24 +142,27 @@ export default function AdvancedAnalysis({
 
       {/* Investment Growth Chart */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Investment Growth Analysis</h4>
+        <h4 className="text-lg font-medium text-gray-900 mb-4">Net Possession Over Time</h4>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={Array.from({ length: loanTenureMonths + 1 }, (_, month) => {
+              data={Array.from({ length: Math.max(loanTenureMonths, 1) }, (_, month) => {
                 const monthlyRate = expectedReturn / 12 / 100;
-                const inflationMonthlyRate = inflationRate / 12 / 100;
-                const nominalValue = initialAmount * Math.pow(1 + monthlyRate, month) +
+                const loanBalance = calculateRemainingLoanBalance(
+                  loanAmount,
+                  loanInterestRate,
+                  loanTenureMonths,
+                  month
+                );
+                const incomeBalance = initialAmount * Math.pow(1 + monthlyRate, month) +
                   monthlyInvestment * ((Math.pow(1 + monthlyRate, month) - 1) / monthlyRate);
-                const realValue = initialAmount * Math.pow(1 + monthlyRate - inflationMonthlyRate, month) +
-                  monthlyInvestment * ((Math.pow(1 + monthlyRate - inflationMonthlyRate, month) - 1) / (monthlyRate - inflationMonthlyRate));
-                const totalContributed = initialAmount + monthlyInvestment * month;
+                const netPossession = incomeBalance - loanBalance;
                 
                 return {
                   month,
-                  'Nominal Value': nominalValue,
-                  'Real Value': realValue,
-                  'Total Contributed': totalContributed
+                  'Loan Balance': loanBalance,
+                  'Income Balance': incomeBalance,
+                  'Net Possession': netPossession
                 };
               })}
               margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
@@ -167,33 +171,85 @@ export default function AdvancedAnalysis({
               <XAxis 
                 dataKey="month"
                 tickFormatter={(month) => `${Math.floor(month/12)}y ${month%12}m`}
+                interval={Math.max(Math.floor(loanTenureMonths / 10), 1)}
+                domain={[0, loanTenureMonths]}
+              />
+              <YAxis 
+                tickFormatter={(value) => `₹${Math.abs(value/100000).toFixed(2)}L`}
+              />
+              <Tooltip 
+                formatter={(value: number) => formatCurrency(value)}
+                labelFormatter={(month) => `${Math.floor(month/12)}y ${month%12}m`}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="Loan Balance"
+                stroke="#ef4444"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="Income Balance"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="Net Possession"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                dot={false}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="mt-4 space-y-2 text-sm text-gray-600">
+          <p>• Red line shows your remaining loan balance</p>
+          <p>• Green line shows your income source growth</p>
+          <p>• Blue line shows your net possession (Income - Loan)</p>
+        </div>
+      </div>
+
+      {/* Monthly Income Growth Chart */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h4 className="text-lg font-medium text-gray-900 mb-4">Monthly Income Growth</h4>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={Array.from({ length: Math.max(loanTenureMonths, 1) }, (_, month) => {
+                const monthlyRate = expectedReturn / 12 / 100;
+                const monthlyIncome = monthlyInvestment * Math.pow(1 + monthlyRate, month);
+                
+                return {
+                  month,
+                  'Monthly Income': monthlyIncome
+                };
+              })}
+              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="month"
+                tickFormatter={(month) => `Year ${Math.floor(month/12)}`}
+                interval={Math.max(Math.floor(loanTenureMonths / 10), 1)}
+                domain={[0, loanTenureMonths]}
               />
               <YAxis tickFormatter={(value) => formatCurrency(value)} />
               <Tooltip 
                 formatter={(value: number) => formatCurrency(value)}
-                labelFormatter={(month) => `${Math.floor(month/12)} years ${month%12} months`}
+                labelFormatter={(month) => `Year ${Math.floor(month/12)}`}
               />
-              <Legend />
               <Area
                 type="monotone"
-                dataKey="Total Contributed"
-                fill="#f3f4f6"
-                stroke="#9ca3af"
-                stackId="1"
+                dataKey="Monthly Income"
+                stroke="#818cf8"
+                fill="#818cf8"
+                fillOpacity={0.2}
               />
-              <Line
-                type="monotone"
-                dataKey="Nominal Value"
-                stroke="#3b82f6"
-                strokeWidth={2}
-              />
-              <Line
-                type="monotone"
-                dataKey="Real Value"
-                stroke="#22c55e"
-                strokeWidth={2}
-              />
-            </ComposedChart>
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>

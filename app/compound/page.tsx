@@ -9,10 +9,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend
+  Legend,
+  AreaChart,
+  Area
 } from 'recharts';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { calculateLoanSchedule } from '../utils/loanCalculations';
+import { calculateLoanSchedule, formatIndianCurrency } from '../utils/loanCalculations';
 import { calculateIncomeGrowth } from '../utils/incomeCalculations';
 import AdvancedAnalysis from '../components/AdvancedAnalysis';
 import { Switch } from '@headlessui/react';
@@ -67,6 +69,13 @@ export default function CompoundScenario() {
 
   const [isAdvanced, setIsAdvanced] = useState(false);
 
+  const handleInputChange = (field: keyof CompoundScenarioParams, value: number | string) => {
+    setParams(prev => ({
+      ...prev,
+      [field]: typeof prev[field] === 'number' ? parseFloat(value as string) || 0 : value,
+    }));
+  };
+
   useEffect(() => {
     // Calculate loan schedule
     const loanSchedule = calculateLoanSchedule({
@@ -94,12 +103,14 @@ export default function CompoundScenario() {
       const loanBalance = month >= loanSchedule.length ? 0 : loanData.remainingBalance;
       const incomeBalance = incomeData.totalValue;
       const netPossession = incomeBalance - loanBalance;
+      const monthlyIncome = params.monthlyContribution * Math.pow(1 + params.annualGrowthRate/1200, month);
 
       return {
         month,
         loanBalance,
         incomeBalance,
-        netPossession
+        netPossession,
+        'Monthly Income': monthlyIncome
       };
     });
 
@@ -151,7 +162,7 @@ export default function CompoundScenario() {
                       max="10000000"
                       step="100000"
                       value={params.loanAmount}
-                      onChange={(e) => setParams(prev => ({ ...prev, loanAmount: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('loanAmount', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -162,7 +173,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.loanAmount}
-                        onChange={(e) => setParams(prev => ({ ...prev, loanAmount: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('loanAmount', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -182,7 +193,7 @@ export default function CompoundScenario() {
                       max="15"
                       step="0.1"
                       value={params.loanInterestRate}
-                      onChange={(e) => setParams(prev => ({ ...prev, loanInterestRate: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('loanInterestRate', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -193,7 +204,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.loanInterestRate}
-                        onChange={(e) => setParams(prev => ({ ...prev, loanInterestRate: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('loanInterestRate', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                         step="0.1"
                       />
@@ -214,7 +225,12 @@ export default function CompoundScenario() {
                       max="360"
                       step="12"
                       value={params.loanTenureMonths}
-                      onChange={(e) => setParams(prev => ({ ...prev, loanTenureMonths: Number(e.target.value) }))}
+                      onChange={(e) => {
+                        handleInputChange('loanTenureMonths', e.target.value); 
+                        if (params.timeHorizonMonths < parseFloat(e.target.value)) {
+                          handleInputChange('timeHorizonMonths', parseFloat(e.target.value))
+                        }
+                      }}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -225,7 +241,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.loanTenureMonths}
-                        onChange={(e) => setParams(prev => ({ ...prev, loanTenureMonths: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('loanTenureMonths', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -245,7 +261,7 @@ export default function CompoundScenario() {
                       max="100000"
                       step="1000"
                       value={params.extraPayment}
-                      onChange={(e) => setParams(prev => ({ ...prev, extraPayment: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('extraPayment', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -256,7 +272,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.extraPayment}
-                        onChange={(e) => setParams(prev => ({ ...prev, extraPayment: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('extraPayment', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -265,7 +281,7 @@ export default function CompoundScenario() {
                     </div>
                     <select
                       value={params.extraPaymentFrequency}
-                      onChange={(e) => setParams(prev => ({ ...prev, extraPaymentFrequency: e.target.value as CompoundScenarioParams['extraPaymentFrequency'] }))}
+                      onChange={(e) => handleInputChange('extraPaymentFrequency', e.target.value)}
                       className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="monthly">Monthly</option>
@@ -292,7 +308,7 @@ export default function CompoundScenario() {
                       max="1000000"
                       step="10000"
                       value={params.initialAmount}
-                      onChange={(e) => setParams(prev => ({ ...prev, initialAmount: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('initialAmount', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -303,7 +319,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.initialAmount}
-                        onChange={(e) => setParams(prev => ({ ...prev, initialAmount: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('initialAmount', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -323,7 +339,7 @@ export default function CompoundScenario() {
                       max="100000"
                       step="1000"
                       value={params.monthlyContribution}
-                      onChange={(e) => setParams(prev => ({ ...prev, monthlyContribution: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -334,7 +350,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.monthlyContribution}
-                        onChange={(e) => setParams(prev => ({ ...prev, monthlyContribution: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       />
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -343,7 +359,7 @@ export default function CompoundScenario() {
                     </div>
                     <select
                       value={params.contributionFrequency}
-                      onChange={(e) => setParams(prev => ({ ...prev, contributionFrequency: e.target.value as 'monthly' | 'annually' }))}
+                      onChange={(e) => handleInputChange('contributionFrequency', e.target.value)}
                       className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="monthly">Monthly</option>
@@ -362,7 +378,7 @@ export default function CompoundScenario() {
                       max="15"
                       step="0.1"
                       value={params.annualGrowthRate}
-                      onChange={(e) => setParams(prev => ({ ...prev, annualGrowthRate: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('annualGrowthRate', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -373,7 +389,7 @@ export default function CompoundScenario() {
                       <input
                         type="number"
                         value={params.annualGrowthRate}
-                        onChange={(e) => setParams(prev => ({ ...prev, annualGrowthRate: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('annualGrowthRate', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                         step="0.1"
                       />
@@ -398,7 +414,7 @@ export default function CompoundScenario() {
                     max="360"
                     step="12"
                     value={params.timeHorizonMonths}
-                    onChange={(e) => setParams(prev => ({ ...prev, timeHorizonMonths: Number(e.target.value) }))}
+                    onChange={(e) => handleInputChange('timeHorizonMonths', e.target.value)}
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -409,7 +425,7 @@ export default function CompoundScenario() {
                     <input
                       type="number"
                       value={params.timeHorizonMonths}
-                      onChange={(e) => setParams(prev => ({ ...prev, timeHorizonMonths: Number(e.target.value) }))}
+                      onChange={(e) => handleInputChange('timeHorizonMonths', e.target.value)}
                       className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -463,20 +479,22 @@ export default function CompoundScenario() {
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={combinedData}
-                      margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
                         dataKey="month"
-                        tickFormatter={(month: number) => `${Math.floor(month/12)}y ${month%12}m`}
+                        tickFormatter={(month) => `${month}`}
+                        domain={[0, Math.ceil(params.timeHorizonMonths)]}
+                        type="number"
+                        allowDataOverflow={false}
                       />
                       <YAxis 
-                        tickFormatter={(value) => formatCurrency(value)}
-                        width={100}
+                        tickFormatter={(value) => `${formatIndianCurrency(value)}`}
                       />
                       <Tooltip 
                         formatter={(value: number) => formatCurrency(value)}
-                        labelFormatter={(month) => `${Math.floor(month/12)} years ${month%12} months`}
+                        labelFormatter={(month) => `Month ${month}`}
                       />
                       <Legend />
                       <Line
@@ -484,12 +502,16 @@ export default function CompoundScenario() {
                         dataKey="loanBalance"
                         stroke="#ef4444"
                         name="Loan Balance"
+                        strokeWidth={2}
+                        dot={false}
                       />
                       <Line
                         type="monotone"
                         dataKey="incomeBalance"
                         stroke="#22c55e"
                         name="Income Balance"
+                        strokeWidth={2}
+                        dot={false}
                       />
                       <Line
                         type="monotone"
@@ -497,14 +519,49 @@ export default function CompoundScenario() {
                         stroke="#3b82f6"
                         name="Net Possession"
                         strokeWidth={2}
+                        dot={false}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="mt-4 space-y-2 text-sm text-gray-600">
                   <p>• Red line shows your remaining loan balance</p>
                   <p>• Green line shows your income source growth</p>
                   <p>• Blue line shows your net possession (Income - Loan)</p>
+                </div>
+              </div>
+
+              {/* Monthly Income Growth Chart */}
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Income Growth</h3>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={combinedData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="month"
+                        tickFormatter={(month) => `${month}`}
+                        domain={[0, Math.ceil(params.timeHorizonMonths)]}
+                        type="number"
+                        allowDataOverflow={false}
+                      />
+                      <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                      <Tooltip 
+                        formatter={(value: number) => formatCurrency(value)}
+                        labelFormatter={(month) => `Month ${month}`}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Monthly Income"
+                        stroke="#818cf8"
+                        fill="#818cf8"
+                        fillOpacity={0.2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 

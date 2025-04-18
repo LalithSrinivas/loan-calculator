@@ -248,7 +248,7 @@ function calculateFutureValue(
   return principalGrowth + contributionGrowth;
 }
 
-function calculateRemainingLoanBalance(
+export function calculateRemainingLoanBalance(
   principal: number,
   annualRate: number,
   totalMonths: number,
