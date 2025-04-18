@@ -125,25 +125,37 @@ export function formatIndianCurrency(amount: number): string {
   }).format(amount);
 }
 
-interface IncomeGrowthParams {
+/**
+ * Interface for income growth parameters including tax and inflation
+ */
+export interface IncomeGrowthParams {
   initialAmount: number;
   monthlyContribution: number;
   contributionFrequency: 'monthly' | 'annually';
   annualGrowthRate: number;
   timeHorizonMonths: number;
+  annualInflationRate?: number;
+  taxBracket?: number;
 }
 
-interface MonthlyIncomeData {
+export interface MonthlyIncomeData {
   month: number;
   totalValue: number;
   totalContributions: number;
   monthlyIncome: number;
+  inflationAdjustedValue?: number;
+  inflationAdjustedIncome?: number;
+  yearlyInterest?: number;
+  yearlyTax?: number;
 }
 
+/**
+ * Calculates income growth with optional tax and inflation adjustments
+ */
 export function calculateIncomeGrowth(params: IncomeGrowthParams): MonthlyIncomeData[] {
   const monthlyRate = params.annualGrowthRate / 12 / 100;
+  const monthlyInflation = (params.annualInflationRate || 0) / 12 / 100;
   const contributionAmount = params.monthlyContribution;
-  const contributionPeriods = params.contributionFrequency === 'annually' ? 12 : 1;
   
   let data: MonthlyIncomeData[] = [];
   let currentAmount = params.initialAmount;
@@ -157,16 +169,31 @@ export function calculateIncomeGrowth(params: IncomeGrowthParams): MonthlyIncome
       totalContributions += contribution;
     }
 
-    // Calculate growth for the month
+    // Calculate growth and tax for the month
     const monthlyIncome = currentAmount * monthlyRate;
-    currentAmount += monthlyIncome;
+    const taxOnIncome = params.taxBracket ? monthlyIncome * (params.taxBracket / 100) : 0;
+    const netIncome = monthlyIncome - taxOnIncome;
+    currentAmount += netIncome;
 
-    data.push({
+    // Calculate inflation-adjusted values
+    const inflationFactor = Math.pow(1 + monthlyInflation, month);
+    const inflationAdjustedValue = params.annualInflationRate ? currentAmount / inflationFactor : undefined;
+    const inflationAdjustedIncome = params.annualInflationRate ? monthlyIncome / inflationFactor : undefined;
+
+    const monthData: MonthlyIncomeData = {
       month,
       totalValue: currentAmount,
       totalContributions,
-      monthlyIncome
-    });
+      monthlyIncome,
+      ...(inflationAdjustedValue && { inflationAdjustedValue }),
+      ...(inflationAdjustedIncome && { inflationAdjustedIncome }),
+      ...(params.taxBracket && {
+        yearlyInterest: monthlyIncome * 12,
+        yearlyTax: taxOnIncome * 12
+      })
+    };
+
+    data.push(monthData);
   }
 
   return data;

@@ -14,10 +14,14 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
 } from 'recharts';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { calculateAdvancedMetrics, calculateRemainingLoanBalance } from '../utils/advancedCalculations';
+import { calculateAdvancedMetrics, calculateTaxSavings, calculateRemainingLoanBalance, calculateROI, calculateYearsToFI, calculateRetirementCorpus, comparePrepaymentVsInvestment, calculateRequiredMonthlyInvestment } from '../utils/advancedCalculations';
+import FinancialTooltip from './FinancialTooltip';
 
 interface AdvancedAnalysisProps {
   loanAmount: number;
@@ -29,6 +33,8 @@ interface AdvancedAnalysisProps {
   expectedReturn: number;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
 export default function AdvancedAnalysis({
   loanAmount,
   loanInterestRate,
@@ -39,7 +45,9 @@ export default function AdvancedAnalysis({
   expectedReturn
 }: AdvancedAnalysisProps) {
   const [inflationRate, setInflationRate] = useState(6);
-
+  const [monthlyExpenses, setMonthlyExpenses] = useState(50000);
+  const [riskTolerance, setRiskTolerance] = useState<'conservative' | 'moderate' | 'aggressive'>('moderate');
+  const [retirementInYears, setRetirementInYears] = useState(30);
   const metrics = calculateAdvancedMetrics({
     loanAmount,
     loanInterestRate,
@@ -51,40 +59,308 @@ export default function AdvancedAnalysis({
     inflationRate
   });
 
+  // Calculate additional metrics
+  const annualInterestPaid = (monthlyEMI * 12) - (loanAmount / (loanTenureMonths / 12));
+  const taxSavings = calculateTaxSavings(annualInterestPaid);
+  const roi = calculateROI({
+    loanAmount: loanAmount,
+    loanInterestRate: loanInterestRate,
+    loanTenureMonths: loanTenureMonths,
+    monthlyEMI: monthlyEMI,
+    initialAmount: initialAmount,
+    monthlyInvestment: monthlyInvestment,
+    expectedReturn: expectedReturn / 100,
+    inflationRate: inflationRate / 100
+  });
+  
+  const yearsToFI = calculateYearsToFI(
+    monthlyExpenses * 12,
+    monthlyInvestment * 12,
+    expectedReturn - inflationRate
+  );
+
+  const retirementCorpus = calculateRetirementCorpus(
+    monthlyExpenses,
+    inflationRate,
+    expectedReturn,
+    Math.ceil(yearsToFI)
+  );
+
+  const investmentVsPrePayment = comparePrepaymentVsInvestment(
+    loanAmount,
+    loanInterestRate,
+    loanTenureMonths,
+    monthlyInvestment,
+    'monthly',
+    expectedReturn
+  );
+
+  // Prepare comparison data
+  const loanSplit = [
+    {
+      name: 'Loan Principal',
+      value: loanAmount
+    },
+    {
+      name: 'Interest Paid',
+      value: metrics.totalInterestPaid
+    }
+  ];
+
+    // Prepare comparison data
+    const investmentSplit = [
+      {
+        name: 'Investment',
+        value: metrics.totalInvestmentContributions
+      },
+      {
+        name: 'Returns',
+        value: metrics.totalEarnings
+      }
+    ];
+
   return (
     <div className="space-y-8">
       {/* Economic Parameters */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Economic Parameters</h3>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Inflation Rate (%)</label>
-          <input
-            type="range"
-            min="2"
-            max="10"
-            step="0.1"
-            value={inflationRate}
-            onChange={(e) => setInflationRate(Number(e.target.value))}
-            className="w-full"
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Economic Parameters"
+            explanation="Factors that affect your financial planning like inflation (rising prices) and your monthly expenses"
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>2%</span>
-            <span>10%</span>
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Inflation Rate (%)</label>
+            <input
+              type="range"
+              min="2"
+              max="10"
+              step="0.1"
+              value={inflationRate}
+              onChange={(e) => setInflationRate(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>2%</span>
+              <span>10%</span>
+            </div>
+            <div className="relative rounded-md shadow-sm">
+              <input
+                type="number"
+                value={inflationRate}
+                onChange={(e) => setInflationRate(Number(e.target.value))}
+                className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                <span className="text-gray-500 sm:text-sm">%</span>
+              </div>
+            </div>
           </div>
-          <input
-            type="number"
-            value={inflationRate}
-            onChange={(e) => setInflationRate(Number(e.target.value))}
-            className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Monthly Expenses</label>
+            <input
+              type="number"
+              value={monthlyExpenses}
+              onChange={(e) => setMonthlyExpenses(Number(e.target.value))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Risk Tolerance</label>
+            <select
+              value={riskTolerance}
+              onChange={(e) => setRiskTolerance(e.target.value as 'conservative' | 'moderate' | 'aggressive')}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            >
+              <option value="conservative">Conservative</option>
+              <option value="moderate">Moderate</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Planning to Retire in (years)</label>
+            <input
+              type="number"
+              value={retirementInYears}
+              onChange={(e) => setRetirementInYears(Number(e.target.value))}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Financial Independence Analysis */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Path to Financial Independence"
+            explanation="The journey to having enough money to cover your living expenses without needing to work"
+          />
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">
+                <FinancialTooltip
+                  term="Years to Financial Independence"
+                  explanation="How many years it will take to save enough money to stop working, based on your current savings and expenses"
+                />
+              </h4>
+              <p className="text-3xl font-bold text-blue-600">{yearsToFI.toFixed(1)} years</p>
+              <p className="text-sm text-blue-800 mt-2">Based on current savings rate and expenses</p>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">
+                <FinancialTooltip
+                  term="Required Retirement Corpus"
+                  explanation="The total amount of money you need to save to maintain your lifestyle after retirement"
+                />
+              </h4>
+              <p className="text-3xl font-bold text-green-600">{formatCurrency(retirementCorpus)}</p>
+              <p className="text-sm text-green-800 mt-2">Using 4% safe withdrawal rate</p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <h4 className="font-medium text-purple-900 mb-2">Monthly Investment Required</h4>
+              <p className="text-3xl font-bold text-purple-600">
+                {formatCurrency(calculateRequiredMonthlyInvestment(retirementCorpus, initialAmount, expectedReturn, retirementInYears*12))}
+              </p>
+              <p className="text-sm text-purple-800 mt-2">To reach retirement corpus</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+     {/* Investment Strategy Comparison */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Investment Strategy Comparison"
+            explanation="Comparing different ways to grow your money, like investing in stocks vs paying off loans"
+          />
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Pie Charts Section */}
+          <div className="space-y-6">
+            {/* Loan Split Pie Chart */}
+            <div className="flex flex-col items-center">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={loanSplit}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => `${entry.name}: ${formatCurrency(entry.value)}`}
+                    >
+                      {loanSplit.map((entry, index) => (
+                        <Cell key={`cell-loan-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Split between loan principal and interest paid
+              </p>
+            </div>
+
+            {/* Investment Split Pie Chart */}
+            <div className="flex flex-col items-center">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={investmentSplit}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={(entry) => `${entry.name}: ${formatCurrency(entry.value)}`}
+                    >
+                      {investmentSplit.map((entry, index) => (
+                        <Cell key={`cell-invest-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Split between investment and returns
+              </p>
+            </div>
+          </div>
+
+          {/* Strategy Analysis Section */}
+          <div className="space-y-4">
+            {/* Investment Strategy Analysis */}
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">
+                If You Choose to Invest {formatCurrency(monthlyInvestment)} per month
+              </h4>
+              <ul className="space-y-2 text-sm text-blue-800">
+                <li>• Return on Investment (ROI): {roi.toFixed(2)}%</li>
+                <li>• Real Return After Inflation: {metrics.realReturnAfterInflation.toFixed(2)}%</li>
+                <li>• Net Gain from Investment: {formatCurrency(investmentVsPrePayment.netGainFromInvestment)}</li>
+                <li>• Loan Tenure (without prepayment): {loanTenureMonths} months</li>
+                <li>• Total Interest Paid (without prepayment): {formatCurrency(investmentVsPrePayment.totalInterestWithoutPrepayment)}</li>
+              </ul>
+            </div>
+
+            {/* Prepayment Strategy Analysis */}
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <h4 className="font-medium text-purple-900 mb-2">
+                If You Choose to Prepay {formatCurrency(monthlyInvestment)} per month
+              </h4>
+              <ul className="space-y-2 text-sm text-purple-800">
+                <li>• Effective Interest Rate (post prepayment): {metrics.effectiveInterestRate.toFixed(2)}%</li>
+                <li>• Loan Tenure (with prepayment): {investmentVsPrePayment.monthsTakenToRepayLoan} months</li>
+                <li>• Total Interest Saved via Prepayment: {formatCurrency(investmentVsPrePayment.interestSaved)}</li>
+                <li>• Total Interest Paid (with prepayment): {formatCurrency(investmentVsPrePayment.totalInterestPaid)}</li>
+              </ul>
+            </div>
+
+            {/* Investment vs Prepayment Outcome */}
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-green-900 mb-2">Investment vs Prepayment</h4>
+              <p className="text-sm text-green-800">
+                {investmentVsPrePayment.difference < 0
+                  ? `📈 Investing yields ${formatCurrency(Math.abs(investmentVsPrePayment.difference))} more than prepaying the loan.`
+                  : `🏦 Prepaying saves you ${formatCurrency(Math.abs(investmentVsPrePayment.difference))} over investing.`}
+              </p>
+            </div>
+
+            {/* Summary Decision */}
+            <div className="p-4 bg-yellow-50 rounded-lg">
+              <h4 className="font-medium text-yellow-900 mb-2">Summary Decision</h4>
+              <p className="text-sm text-yellow-800">
+                Recommended Option: <strong>{investmentVsPrePayment.betterOption}</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
 
       {/* Key Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Loan Analysis */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h4 className="text-lg font-medium text-gray-900 mb-4">Loan Analysis</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-4">
+            <FinancialTooltip
+              term="Loan Analysis"
+              explanation="Understanding how much you'll pay in interest and the true cost of your loan"
+            />
+          </h4>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Total Interest Paid</p>
@@ -103,7 +379,12 @@ export default function AdvancedAnalysis({
 
         {/* Investment Analysis */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h4 className="text-lg font-medium text-gray-900 mb-4">Investment Analysis</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-4">
+            <FinancialTooltip
+              term="Investment Analysis"
+              explanation="Understanding how your investments grow over time and the returns you can expect"
+            />
+          </h4>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Total Investment Value</p>
@@ -122,7 +403,12 @@ export default function AdvancedAnalysis({
 
         {/* Comparative Analysis */}
         <div className="bg-white rounded-lg shadow-lg p-6">
-          <h4 className="text-lg font-medium text-gray-900 mb-4">Comparative Analysis</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-4">
+            <FinancialTooltip
+              term="Comparative Analysis"
+              explanation="Comparing different financial options to help you make better decisions"
+            />
+          </h4>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Investment vs Loan Ratio</p>
@@ -142,7 +428,12 @@ export default function AdvancedAnalysis({
 
       {/* Investment Growth Chart */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Net Possession Over Time</h4>
+        <h4 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Net Possession Over Time"
+            explanation="Shows how your total wealth (investments minus loans) changes over the years"
+          />
+        </h4>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
@@ -215,7 +506,12 @@ export default function AdvancedAnalysis({
 
       {/* Monthly Income Growth Chart */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Monthly Income Growth</h4>
+        <h4 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Monthly Income Growth"
+            explanation="How your investment income grows each month, showing the power of compound interest"
+          />
+        </h4>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
@@ -256,7 +552,12 @@ export default function AdvancedAnalysis({
 
       {/* Analysis Insights */}
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h4 className="text-lg font-medium text-gray-900 mb-4">Analysis Insights</h4>
+        <h4 className="text-lg font-medium text-gray-900 mb-4">
+          <FinancialTooltip
+            term="Analysis Insights"
+            explanation="Key findings and recommendations based on your financial situation"
+          />
+        </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-lg">
@@ -270,7 +571,7 @@ export default function AdvancedAnalysis({
             <div className="p-4 bg-green-50 rounded-lg">
               <h5 className="font-medium text-green-900 mb-2">Investment Performance</h5>
               <ul className="space-y-2 text-sm text-green-800">
-                <li>• Total contributions: {formatCurrency(metrics.totalContributions)}</li>
+                <li>• Total contributions: {formatCurrency(metrics.totalInvestmentContributions)}</li>
                 <li>• Investment earnings: {formatCurrency(metrics.totalEarnings)}</li>
                 <li>• Wealth accumulation rate: {metrics.wealthAccumulationRate.toFixed(2)}%</li>
               </ul>

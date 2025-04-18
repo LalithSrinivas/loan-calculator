@@ -22,7 +22,7 @@ interface AdvancedMetrics {
 
   // Investment Analysis
   totalInvestmentValue: number;
-  totalContributions: number;
+  totalInvestmentContributions: number;
   totalEarnings: number;
   effectiveReturnRate: number;
 
@@ -64,15 +64,15 @@ export function calculateAdvancedMetrics(params: AdvancedAnalysisParams): Advanc
     monthlyRate,
     params.loanTenureMonths
   );
-  const totalContributions = params.initialAmount + (params.monthlyInvestment * params.loanTenureMonths);
-  const totalEarnings = totalInvestmentValue - totalContributions;
-  const effectiveReturnRate = (Math.pow(totalInvestmentValue / totalContributions, 12 / params.loanTenureMonths) - 1) * 100;
+  const totalInvestmentContributions = params.initialAmount + (params.monthlyInvestment * params.loanTenureMonths);
+  const totalEarnings = totalInvestmentValue - totalInvestmentContributions;
+  const effectiveReturnRate = (Math.pow(totalInvestmentValue / totalInvestmentContributions, 12 / params.loanTenureMonths) - 1) * 100;
 
   // Comparative Analysis
   const investmentVsLoanRatio = totalInvestmentValue / totalLoanPayment * 100;
   const breakevenPoint = calculateBreakEvenPoint(params);
   const realReturnAfterInflation = params.expectedReturn - (params.inflationRate || 6);
-  const wealthAccumulationRate = (totalEarnings / totalContributions) * 100;
+  const wealthAccumulationRate = (totalEarnings / totalInvestmentContributions) * 100;
 
   return {
     totalInterestPaid,
@@ -80,7 +80,7 @@ export function calculateAdvancedMetrics(params: AdvancedAnalysisParams): Advanc
     loanCostRatio,
     totalLoanPayment,
     totalInvestmentValue,
-    totalContributions,
+    totalInvestmentContributions: totalInvestmentContributions,
     totalEarnings,
     effectiveReturnRate,
     investmentVsLoanRatio,
@@ -90,7 +90,7 @@ export function calculateAdvancedMetrics(params: AdvancedAnalysisParams): Advanc
   };
 }
 
-function calculateTaxSavings(interestPaid: number): number {
+export function calculateTaxSavings(interestPaid: number): number {
   let taxSaving = 0;
   let remainingAmount = Math.min(interestPaid, 200000); // Max deduction under 24(b)
 
@@ -108,7 +108,7 @@ function calculateTaxSavings(interestPaid: number): number {
   return taxSaving;
 }
 
-function calculateYearlyTax(income: number): number {
+export function calculateYearlyTax(income: number): number {
   let tax = 0;
   let remainingIncome = income;
 
@@ -126,7 +126,7 @@ function calculateYearlyTax(income: number): number {
   return tax;
 }
 
-function calculateSafeWithdrawalRate(riskTolerance: 'conservative' | 'moderate' | 'aggressive'): number {
+export function calculateSafeWithdrawalRate(riskTolerance: 'conservative' | 'moderate' | 'aggressive'): number {
   switch (riskTolerance) {
     case 'conservative': return 3;
     case 'moderate': return 4;
@@ -134,18 +134,22 @@ function calculateSafeWithdrawalRate(riskTolerance: 'conservative' | 'moderate' 
   }
 }
 
-function calculateROI(params: AdvancedAnalysisParams): number {
+export function calculateROI(params: AdvancedAnalysisParams): number {
   const totalInvestment = params.initialAmount + (params.monthlyInvestment * params.loanTenureMonths);
+  if (totalInvestment <= 0) {
+    return 0;
+  }
   const finalAmount = calculateFutureValue(
     params.initialAmount,
     params.monthlyInvestment,
     params.expectedReturn / 12,
     params.loanTenureMonths
   );
+  console.log(finalAmount, totalInvestment);
   return ((finalAmount - totalInvestment) / totalInvestment) * 100;
 }
 
-function calculateBreakEvenPoint(params: AdvancedAnalysisParams): number {
+export function calculateBreakEvenPoint(params: AdvancedAnalysisParams): number {
   let month = 0;
   let investmentValue = params.initialAmount;
   let loanBalance = params.loanAmount;
@@ -165,79 +169,162 @@ function calculateBreakEvenPoint(params: AdvancedAnalysisParams): number {
   return month;
 }
 
-function calculateYearsToFI(
+export function calculateYearsToFI(
   annualExpenses: number,
   annualSavings: number,
   realReturn: number
 ): number {
-  const targetCorpus = annualExpenses * 25; // Using 4% rule
+  if (annualSavings <= 0) {
+    throw new Error("Annual savings must be greater than 0.");
+  }
+
+  const targetCorpus = annualExpenses * 25; // 4% rule
   const monthlyRate = realReturn / 12 / 100;
   let months = 0;
   let corpus = 0;
 
-  while (corpus < targetCorpus && months < 600) { // Max 50 years
+  const maxMonths = 100 * 12; // 50 years safety cap
+
+  while (corpus < targetCorpus && months < maxMonths) {
     corpus = corpus * (1 + monthlyRate) + (annualSavings / 12);
     months++;
   }
 
-  return months / 12;
+  return months / 12; // Return years (can be fractional)
 }
 
-function calculateRetirementCorpus(
+
+export function calculateRetirementCorpus(
   monthlyExpenses: number,
   inflationRate: number,
   expectedReturn: number,
   yearsToRetirement: number
 ): number {
-  const annualExpenses = monthlyExpenses * 12;
-  const inflationAdjustedExpenses = annualExpenses * Math.pow(1 + inflationRate/100, yearsToRetirement);
-  return inflationAdjustedExpenses * 25; // Using 4% rule
+
+  // Step 1: Inflate monthly expenses to retirement
+  const inflatedMonthlyExpenses = monthlyExpenses * Math.pow(1 + inflationRate / 100, yearsToRetirement);
+
+  // Step 2: Convert to annual expenses
+  const inflatedAnnualExpenses = inflatedMonthlyExpenses * 12;
+
+  // Step 3: Safe withdrawal rate (as a decimal)
+  const safeWithdrawalRate = (expectedReturn - inflationRate) / 100;
+
+  // Step 4: Calculate required corpus
+  const requiredCorpus = inflatedAnnualExpenses / safeWithdrawalRate;
+
+  return requiredCorpus;
 }
 
-function calculateRequiredMonthlyInvestment(
+
+export function calculateRequiredMonthlyInvestment(
   targetAmount: number,
   initialAmount: number,
   annualReturn: number,
   months: number
 ): number {
-  const r = annualReturn / 12 / 100;
-  const denominator = ((Math.pow(1 + r, months) - 1) / r);
-  return (targetAmount - initialAmount * Math.pow(1 + r, months)) / denominator;
+  const monthlyRate = annualReturn / 12 / 100;
+
+  if (months <= 0) {
+    return 0;
+  }
+
+  if (monthlyRate === 0) {
+    // No return — simple case
+    return (targetAmount - initialAmount) / months;
+  }
+
+  const compoundFactor = Math.pow(1 + monthlyRate, months);
+  const numerator = targetAmount - (initialAmount * compoundFactor);
+  const denominator = (compoundFactor - 1) / monthlyRate;
+
+  const monthlyInvestment = numerator / denominator;
+
+  return monthlyInvestment;
 }
 
-function comparePrePaymentVsInvestment(
+export function comparePrepaymentVsInvestment(
   loanAmount: number,
-  loanRate: number,
-  investmentReturn: number,
-  tenureMonths: number
-): number {
-  const prepaymentSavings = loanAmount * (loanRate/100) * (tenureMonths/12);
-  const investmentGains = calculateFutureValue(
-    loanAmount,
-    0,
-    investmentReturn/12,
-    tenureMonths
-  ) - loanAmount;
-  return investmentGains - prepaymentSavings;
+  loanInterestRateAnnual: number,
+  loanTenureMonths: number,
+  prepaymentAmountPerPeriod: number,
+  prepaymentFrequency: string, // 'monthly' | 'quarterly' | 'semiannually' | 'annually'
+  investmentReturnRateAnnual: number
+) {
+  const frequencyMap = {
+    'monthly': 1,
+    'quarterly': 3,
+    'semiannually': 6,
+    'annually': 12
+  };
+
+  const monthsPerPeriod = frequencyMap[prepaymentFrequency as keyof typeof frequencyMap];
+  if (!monthsPerPeriod) {
+    throw new Error("Invalid prepayment frequency");
+  }
+
+  const monthlyInterestRate = loanInterestRateAnnual / 12 / 100;
+  const periodicInvestmentRate = (investmentReturnRateAnnual / (12 / monthsPerPeriod)) / 100;
+
+  let remainingLoan = loanAmount;
+  let totalInterestPaid = 0;
+  let months = 0;
+
+  const emi = (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, loanTenureMonths)) /
+              (Math.pow(1 + monthlyInterestRate, loanTenureMonths) - 1);
+
+  let totalInterestWithoutPrepayment = 0;
+  let tempLoan = loanAmount;
+
+  // Calculate total interest without prepayment
+  for (let i = 0; i < loanTenureMonths; i++) {
+    const interest = tempLoan * monthlyInterestRate;
+    const principal = emi - interest;
+    tempLoan -= principal;
+    totalInterestWithoutPrepayment += interest;
+  }
+
+  // Prepayment scenario
+  while (remainingLoan > 0 && months < 1000) { // guard against infinite loops
+    months++;
+
+    const interest = remainingLoan * monthlyInterestRate;
+    let principal = emi - interest;
+    remainingLoan -= principal;
+    totalInterestPaid += interest;
+
+    if (months % monthsPerPeriod === 0) {
+      remainingLoan -= prepaymentAmountPerPeriod;
+      if (remainingLoan < 0) remainingLoan = 0;
+    }
+  }
+
+  const interestSaved = totalInterestWithoutPrepayment - totalInterestPaid;
+
+  // Investment scenario
+  let totalInvestment = 0;
+  const totalInvestmentValue = calculateFutureValue(0, prepaymentAmountPerPeriod, periodicInvestmentRate, loanTenureMonths);
+  totalInvestment = prepaymentAmountPerPeriod * loanTenureMonths;
+
+  const netGainFromInvestment = totalInvestmentValue - totalInvestment;
+  console.log(totalInvestmentValue.toFixed(2), totalInvestment.toFixed(2));
+  console.log(netGainFromInvestment.toFixed(2));
+
+  const difference = interestSaved - netGainFromInvestment;
+  const betterOption = difference > 0 ? 'Prepay Loan' : 'Invest Money';
+
+  return {
+    monthsTakenToRepayLoan: months,
+    interestSaved: interestSaved,
+    netGainFromInvestment: netGainFromInvestment,
+    betterOption,
+    difference: difference,
+    totalInterestPaid: totalInterestPaid,
+    totalInterestWithoutPrepayment: totalInterestWithoutPrepayment
+  };
 }
 
-function calculatePotentialReturns(
-  monthlyInvestment: number,
-  annualReturn: number,
-  months: number
-): number {
-  return calculateFutureValue(0, monthlyInvestment, annualReturn/12, months);
-}
-
-function calculateFDReturns(
-  monthlyInvestment: number,
-  fdRate: number,
-  months: number
-): number {
-  return calculateFutureValue(0, monthlyInvestment, fdRate/12, months);
-}
-
-function calculateFutureValue(
+export function calculateFutureValue(
   principal: number,
   monthlyContribution: number,
   monthlyRate: number,
