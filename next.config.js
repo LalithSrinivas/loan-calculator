@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  output: 'export',
+  images: {
+    unoptimized: true
+  },
+  basePath: "/loan-calculator",
+  assetPrefix: "/loan-calculator/"
 };
 
-module.exports = nextConfig; 
+module.exports = nextConfig;
