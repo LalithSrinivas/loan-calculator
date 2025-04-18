@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   description: 'Calculate and analyze your loan repayment and investment growth scenarios',
 };
 
+const navigation = [
+  { name: 'Loan Calculator', href: '/' },
+  { name: 'Income Growth', href: '/income' },
+  { name: 'Compound Growth', href: '/compound' },
+  { name: 'Financial Glossary', href: '/glossary' },
+];
+
 export default function RootLayout({
   children,
 }: {
