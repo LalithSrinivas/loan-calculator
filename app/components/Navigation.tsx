@@ -18,9 +18,9 @@ export default function Navigation() {
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
-                href="/"
+                href="/loan-calculator/"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/')
+                  isActive('/loan-calculator/')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
@@ -28,9 +28,9 @@ export default function Navigation() {
                 Basic Calculator
               </Link>
               <Link
-                href="/comparison"
+                href="/loan-calculator/comparison"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/comparison')
+                  isActive('/loan-calculator/comparison')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
@@ -38,9 +38,9 @@ export default function Navigation() {
                 Loan Comparison
               </Link>
               <Link
-                href="/income"
+                href="/loan-calculator/income"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/income')
+                  isActive('/loan-calculator/income')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
@@ -48,9 +48,9 @@ export default function Navigation() {
                 Income Growth
               </Link>
               <Link
-                href="/compound"
+                href="/loan-calculator/compound"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/compound')
+                  isActive('/loan-calculator/compound')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}
@@ -58,9 +58,9 @@ export default function Navigation() {
                 Compound Scenario
               </Link>
               <Link
-                href="/glossary"
+                href="/loan-calculator/glossary"
                 className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  isActive('/glossary')
+                  isActive('/loan-calculator/glossary')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                 }`}

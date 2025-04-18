@@ -18,6 +18,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import './globals.css';
 import { Switch } from '@headlessui/react';
 import {
   LoanParams,
