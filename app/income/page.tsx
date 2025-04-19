@@ -400,7 +400,7 @@ export default function IncomeGrowth() {
               <div className="space-y-6">
                 {/* Total Value Comparison */}
                 <div className="h-80">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Yearly Contributions and Returns</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Yearly trend of Contributions and Networth</h4>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={getInvestmentDetails()}
@@ -413,7 +413,7 @@ export default function IncomeGrowth() {
                       {/* <Legend /> */}
                       <Line
                         type="monotone"
-                        dataKey="netWorthInvestment"
+                        dataKey="investmentValue"
                         name="Net Worth (Investment)"
                         stroke="#8884d8"
                       />
