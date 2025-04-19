@@ -24,6 +24,7 @@ import {
   calculateEMI,
   generateAmortizationSchedule,
   calculateLoanSummary,
+  getExtraPaymentImpact
 } from './utils/loanCalculations';
 import { formatCurrency } from './utils/currencyFormatter';
 import GraphToggle from './components/GraphToggle';
@@ -374,6 +375,13 @@ export default function LoanCalculator() {
                 <p className="text-3xl font-bold text-blue-600">
                   {summary ? formatCurrency(summary.totalInterest) : '₹0'}
                 </p>
+                {
+                  showExtraPayment && (
+                    <p className="text-sm text-gray-600">
+                      Interest saved with extra payments: {summary ? formatCurrency(getExtraPaymentImpact(params).interestSaved) : '₹0'}
+                    </p>
+                  )
+                }
               </div>
             </div>
 

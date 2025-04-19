@@ -103,19 +103,22 @@ export function calculateLoanSummary(schedule: AmortizationRow[]) {
       monthlyEMI: 0,
       totalPayments: 0,
       totalInterest: 0,
-      totalExtraPayments: 0
+      totalExtraPayments: 0,
+      totalTenureMonths: 0
     };
   }
 
   const totalInterest = schedule.reduce((sum, row) => sum + row.interest, 0);
   const totalExtraPayments = schedule.reduce((sum, row) => sum + row.extraPayment, 0);
   const totalPayments = schedule.reduce((sum, row) => sum + row.principal + row.interest, 0);
+  const totalTenureMonths = schedule.length;
 
   return {
     monthlyEMI: schedule[0].payment,
     totalPayments,
     totalInterest,
-    totalExtraPayments
+    totalExtraPayments,
+    totalTenureMonths
   };
 }
 
@@ -215,4 +218,20 @@ export function calculateLoanSchedule(params: LoanScheduleParams): MonthlyLoanDa
   }
 
   return data;
+}
+
+export function getExtraPaymentImpact(params: LoanParams): {
+  interestSaved: number;
+  tenureReduced: number;
+} {
+    const schedule = generateAmortizationSchedule(params);
+    const summary = calculateLoanSummary(schedule);
+    const paramsWithoutExtraPayment = { ...params, extraPayment: 0 };
+    const scheduleWithoutExtraPayment = generateAmortizationSchedule(paramsWithoutExtraPayment);
+    const summaryWithoutExtraPayment = calculateLoanSummary(scheduleWithoutExtraPayment);
+    
+    return {
+      interestSaved: summaryWithoutExtraPayment.totalInterest - summary.totalInterest,
+      tenureReduced: summaryWithoutExtraPayment.totalTenureMonths - summary.totalTenureMonths
+    };
 }

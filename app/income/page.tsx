@@ -53,47 +53,29 @@ export default function IncomeGrowth() {
     setIncomeData(data);
   }, [params]);
 
-  const getInvestmentVsLoanComparison = () => {
+  const getInvestmentDetails = () => {
     const monthlyRate = params.annualGrowthRate / 12 / 100;
-    const loanRate = 9 / 12 / 100; // Assuming 9% loan interest rate
     const months = params.timeHorizonMonths;
     
     let investmentAmount = params.initialAmount;
-    let loanBalance = params.initialAmount;
     let totalInvestmentContributions = params.initialAmount;
-    let totalLoanPayments = 0;
     
     const comparisonData = [];
     
     for (let year = 0; year <= months/12; year++) {
       // Investment scenario
-      for (let m = 0; m < 12 && year * 12 + m < months; m++) {
+      for (let m = 0; m < 12; m++) {
         investmentAmount = investmentAmount * (1 + monthlyRate) + params.monthlyContribution;
         totalInvestmentContributions += params.monthlyContribution;
-      }
-
-      // Loan prepayment scenario
-      for (let m = 0; m < 12 && year * 12 + m < months; m++) {
-        const loanInterest = loanBalance * loanRate;
-        const principalReduction = params.monthlyContribution;
-        loanBalance = Math.max(0, loanBalance - principalReduction);
-        totalLoanPayments += principalReduction;
-        
-        if (loanBalance === 0) break;
       }
 
       const yearData = {
         year,
         investmentValue: investmentAmount,
-        loanBalance,
         totalInvestmentContributions,
-        totalLoanPayments,
         investmentReturns: investmentAmount - totalInvestmentContributions,
-        interestSaved: params.initialAmount * Math.pow(1 + loanRate, year * 12) - loanBalance,
         netWorthInvestment: investmentAmount - params.initialAmount,
-        netWorthPrepayment: params.initialAmount - loanBalance,
         monthlyIncomeFromInvestment: investmentAmount * monthlyRate,
-        monthlyInterestSaved: loanBalance * loanRate
       };
 
       comparisonData.push(yearData);
@@ -372,7 +354,7 @@ export default function IncomeGrowth() {
           <div className="space-y-8">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-white rounded-lg shadow-lg p-6">
+              {/* <div className="bg-white rounded-lg shadow-lg p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   <FinancialTooltip
                     term="Monthly Passive Income"
@@ -387,7 +369,7 @@ export default function IncomeGrowth() {
                     After Tax: {formatCurrency((incomeData[incomeData.length - 1]?.monthlyIncome || 0) * (1 - (params.taxBracket || 0) / 100))}
                   </p>
                 )}
-              </div>
+              </div> */}
               
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -411,24 +393,24 @@ export default function IncomeGrowth() {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 <FinancialTooltip
-                  term="Investment vs Loan Prepayment"
+                  term="Investment returns over time"
                   explanation="Compare the financial impact of investing versus using the same money to prepay your loan"
                 />
               </h3>
               <div className="space-y-6">
                 {/* Total Value Comparison */}
                 <div className="h-80">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Net Worth Growth Comparison</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Yearly Contributions and Returns</h4>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
-                      data={getInvestmentVsLoanComparison()}
+                      data={getInvestmentDetails()}
                       margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="year" label={{ value: 'Years', position: 'bottom' }} />
                       <YAxis tickFormatter={(value) => formatCurrency(value)} width={100} />
                       <Tooltip formatter={(value: number) => formatCurrency(value)} />
-                      <Legend />
+                      {/* <Legend /> */}
                       <Line
                         type="monotone"
                         dataKey="netWorthInvestment"
@@ -437,8 +419,8 @@ export default function IncomeGrowth() {
                       />
                       <Line
                         type="monotone"
-                        dataKey="netWorthPrepayment"
-                        name="Net Worth (Prepayment)"
+                        dataKey="totalInvestmentContributions"
+                        name="Total Investment Contributions"
                         stroke="#82ca9d"
                       />
                     </LineChart>
@@ -446,7 +428,7 @@ export default function IncomeGrowth() {
                 </div>
 
                 {/* Monthly Benefit Comparison */}
-                <div className="h-80">
+                {/* <div className="h-80">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Monthly Benefit Comparison</h4>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
@@ -470,14 +452,14 @@ export default function IncomeGrowth() {
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
-                </div>
+                </div> */}
 
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <h4 className="font-medium text-blue-900 mb-2">Investment Strategy</h4>
                     {(() => {
-                      const finalData = getInvestmentVsLoanComparison().slice(-1)[0];
+                      const finalData = getInvestmentDetails().slice(-1)[0];
                       return (
                         <ul className="space-y-2 text-sm text-blue-800">
                           <li>• Final Portfolio Value: {formatCurrency(finalData.investmentValue)}</li>
@@ -488,7 +470,7 @@ export default function IncomeGrowth() {
                       );
                     })()}
                   </div>
-                  <div className="p-4 bg-green-50 rounded-lg">
+                  {/* <div className="p-4 bg-green-50 rounded-lg">
                     <h4 className="font-medium text-green-900 mb-2">Loan Prepayment</h4>
                     {(() => {
                       const finalData = getInvestmentVsLoanComparison().slice(-1)[0];
@@ -501,13 +483,11 @@ export default function IncomeGrowth() {
                         </ul>
                       );
                     })()}
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="text-sm text-gray-600 space-y-2">
                   <p>• Investment strategy assumes {params.annualGrowthRate}% annual returns</p>
-                  <p>• Loan calculations assume 9% annual interest rate</p>
-                  <p>• Net worth considers loan balance as negative and investments as positive</p>
                   <p>• All calculations ignore tax implications for simplicity</p>
                 </div>
               </div>

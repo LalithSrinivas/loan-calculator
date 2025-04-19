@@ -275,7 +275,7 @@ export default function LoanComparison() {
                 <p>Monthly EMI: {formatIndianCurrency(calculateEMI(scenario1))}</p>
                 <p>Total Interest: {formatIndianCurrency(summary1.totalInterest)}</p>
                 <p>Total Amount: {formatIndianCurrency(summary1.totalPayments)}</p>
-                <p>Loan Tenure: {summary1.actualTenure} months</p>
+                <p>Loan Tenure: {summary1.totalTenureMonths} months</p>
               </div>
             )}
           </div>
@@ -287,7 +287,7 @@ export default function LoanComparison() {
                 <p>Monthly EMI: {formatIndianCurrency(calculateEMI(scenario2))}</p>
                 <p>Total Interest: {formatIndianCurrency(summary2.totalInterest)}</p>
                 <p>Total Amount: {formatIndianCurrency(summary2.totalPayments)}</p>
-                <p>Loan Tenure: {summary2.actualTenure} months</p>
+                <p>Loan Tenure: {summary2.totalTenureMonths} months</p>
               </div>
             )}
           </div>
