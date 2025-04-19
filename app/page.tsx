@@ -27,6 +27,7 @@ import {
 } from './utils/loanCalculations';
 import { formatCurrency } from './utils/currencyFormatter';
 import GraphToggle from './components/GraphToggle';
+import { saveTabState, loadTabState, LoanCachedTabState } from './utils/cacheUtils';
 
 export default function LoanCalculator() {
   const [params, setParams] = useState<LoanParams>({
@@ -37,6 +38,14 @@ export default function LoanCalculator() {
     extraPaymentFrequency: 'monthly' as const,
     extraPaymentStartMonth: 1,
   });
+
+  // Load cached values after initial render
+  useEffect(() => {
+    const cachedState = loadTabState<LoanCachedTabState>('basic_loan');
+    if (cachedState) {
+      setParams(cachedState);
+    }
+  }, []);
 
   const [schedule, setSchedule] = useState<any[]>([]);
   const [summary, setSummary] = useState<any>(null);
@@ -50,10 +59,16 @@ export default function LoanCalculator() {
   }, [params]);
 
   const handleInputChange = (field: keyof LoanParams, value: number | string) => {
-    setParams(prev => ({
-      ...prev,
-      [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
-    }));
+    const newValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    setParams(prev => {
+      const newParams = {
+        ...prev,
+        [field]: newValue,
+      };
+      // Save state to cache whenever it changes
+      saveTabState('basic_loan', newParams);
+      return newParams;
+    });
   };
 
   const getGraphData = () => {
@@ -152,20 +167,22 @@ export default function LoanCalculator() {
                 </label>
                 <input
                   type="range"
-                  min="100000"
-                  max="10000000"
+                  min="1"
+                  max="100000000"
                   step="100000"
                   value={params.loanAmount}
                   onChange={(e) => handleInputChange('loanAmount', e.target.value)}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                  <span>₹1L</span>
-                  <span>₹1Cr</span>
+                  <span>₹1</span>
+                  <span>₹10Cr</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="1"
+                    max="100000000"
                     value={params.loanAmount}
                     onChange={(e) => handleInputChange('loanAmount', e.target.value)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -183,7 +200,7 @@ export default function LoanCalculator() {
                 </label>
                 <input
                   type="range"
-                  min="5"
+                  min="0.01"
                   max="20"
                   step="0.1"
                   value={params.annualInterestRate}
@@ -191,16 +208,18 @@ export default function LoanCalculator() {
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                  <span>5%</span>
+                  <span>0.01%</span>
                   <span>20%</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="0.01"
+                    max="20"
+                    step="0.1"
                     value={params.annualInterestRate}
                     onChange={(e) => handleInputChange('annualInterestRate', e.target.value)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    step="0.1"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <span className="text-gray-500 sm:text-sm">%</span>
@@ -229,6 +248,8 @@ export default function LoanCalculator() {
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="12"
+                    max="360"
                     value={params.loanTenureMonths}
                     onChange={(e) => handleInputChange('loanTenureMonths', e.target.value)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"

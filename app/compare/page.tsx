@@ -26,6 +26,7 @@ import {
 } from '../utils/loanCalculations';
 import { formatCurrency } from '../utils/currencyFormatter';
 import GraphToggle from '../components/GraphToggle';
+import { saveTabState, loadTabState, LoanCachedTabState } from '../utils/cacheUtils';
 
 export default function LoanComparison() {
   const [scenario1, setScenario1] = useState<LoanParams>({
@@ -46,6 +47,19 @@ export default function LoanComparison() {
     extraPaymentStartMonth: 1,
   });
 
+  // Load cached values after initial render
+  useEffect(() => {
+    const cachedState1 = loadTabState<LoanCachedTabState>('comparison_scenario1');
+    const cachedState2 = loadTabState<LoanCachedTabState>('comparison_scenario2');
+    
+    if (cachedState1) {
+      setScenario1(cachedState1);
+    }
+    if (cachedState2) {
+      setScenario2(cachedState2);
+    }
+  }, []);
+
   const [schedule1, setSchedule1] = useState<any[]>([]);
   const [schedule2, setSchedule2] = useState<any[]>([]);
   const [summary1, setSummary1] = useState<any>(null);
@@ -62,16 +76,25 @@ export default function LoanComparison() {
   }, [scenario1, scenario2]);
 
   const handleInputChange = (scenario: '1' | '2', field: keyof LoanParams, value: number | string) => {
+    const newValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
     if (scenario === '1') {
-      setScenario1(prev => ({
-        ...prev,
-        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
-      }));
+      setScenario1(prev => {
+        const newParams = {
+          ...prev,
+          [field]: newValue,
+        };
+        saveTabState('comparison_scenario1', newParams);
+        return newParams;
+      });
     } else {
-      setScenario2(prev => ({
-        ...prev,
-        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
-      }));
+      setScenario2(prev => {
+        const newParams = {
+          ...prev,
+          [field]: newValue,
+        };
+        saveTabState('comparison_scenario2', newParams);
+        return newParams;
+      });
     }
   };
 
@@ -145,7 +168,102 @@ export default function LoanComparison() {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-2xl font-semibold mb-6">Scenario 1</h2>
               <div className="space-y-6">
-                {/* ... existing input fields ... */}
+                {/* Loan Amount */}
+                <div>
+                  <label htmlFor="loanAmount1" className="block text-sm font-medium text-gray-700 mb-1">
+                    Loan Amount
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="100000000"
+                    step="100000"
+                    value={scenario1.loanAmount}
+                    onChange={(e) => handleInputChange('1', 'loanAmount', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>₹1</span>
+                    <span>₹10Cr</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100000000"
+                      value={scenario1.loanAmount}
+                      onChange={(e) => handleInputChange('1', 'loanAmount', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interest Rate */}
+                <div>
+                  <label htmlFor="annualInterestRate1" className="block text-sm font-medium text-gray-700 mb-1">
+                    Annual Interest Rate
+                  </label>
+                  <input
+                    type="range"
+                    min="0.01"
+                    max="20"
+                    step="0.1"
+                    value={scenario1.annualInterestRate}
+                    onChange={(e) => handleInputChange('1', 'annualInterestRate', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>0.01%</span>
+                    <span>20%</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0.01"
+                      max="20"
+                      step="0.1"
+                      value={scenario1.annualInterestRate}
+                      onChange={(e) => handleInputChange('1', 'annualInterestRate', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-gray-500 sm:text-sm">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Tenure */}
+                <div>
+                  <label htmlFor="loanTenureMonths1" className="block text-sm font-medium text-gray-700 mb-1">
+                    Loan Tenure (Months)
+                  </label>
+                  <input
+                    type="range"
+                    min="12"
+                    max="360"
+                    step="12"
+                    value={scenario1.loanTenureMonths}
+                    onChange={(e) => handleInputChange('1', 'loanTenureMonths', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>1 Year</span>
+                    <span>30 Years</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="12"
+                      max="360"
+                      value={scenario1.loanTenureMonths}
+                      onChange={(e) => handleInputChange('1', 'loanTenureMonths', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -153,7 +271,102 @@ export default function LoanComparison() {
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-2xl font-semibold mb-6">Scenario 2</h2>
               <div className="space-y-6">
-                {/* ... existing input fields ... */}
+                {/* Loan Amount */}
+                <div>
+                  <label htmlFor="loanAmount2" className="block text-sm font-medium text-gray-700 mb-1">
+                    Loan Amount
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="100000000"
+                    step="100000"
+                    value={scenario2.loanAmount}
+                    onChange={(e) => handleInputChange('2', 'loanAmount', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>₹1</span>
+                    <span>₹10Cr</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100000000"
+                      value={scenario2.loanAmount}
+                      onChange={(e) => handleInputChange('2', 'loanAmount', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interest Rate */}
+                <div>
+                  <label htmlFor="annualInterestRate2" className="block text-sm font-medium text-gray-700 mb-1">
+                    Annual Interest Rate
+                  </label>
+                  <input
+                    type="range"
+                    min="0.01"
+                    max="20"
+                    step="0.1"
+                    value={scenario2.annualInterestRate}
+                    onChange={(e) => handleInputChange('2', 'annualInterestRate', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>0.01%</span>
+                    <span>20%</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="0.01"
+                      max="20"
+                      step="0.1"
+                      value={scenario2.annualInterestRate}
+                      onChange={(e) => handleInputChange('2', 'annualInterestRate', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <span className="text-gray-500 sm:text-sm">%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Tenure */}
+                <div>
+                  <label htmlFor="loanTenureMonths2" className="block text-sm font-medium text-gray-700 mb-1">
+                    Loan Tenure (Months)
+                  </label>
+                  <input
+                    type="range"
+                    min="12"
+                    max="360"
+                    step="12"
+                    value={scenario2.loanTenureMonths}
+                    onChange={(e) => handleInputChange('2', 'loanTenureMonths', e.target.value)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
+                    <span>1 Year</span>
+                    <span>30 Years</span>
+                  </div>
+                  <div className="relative rounded-md shadow-sm">
+                    <input
+                      type="number"
+                      min="12"
+                      max="360"
+                      value={scenario2.loanTenureMonths}
+                      onChange={(e) => handleInputChange('2', 'loanTenureMonths', e.target.value)}
+                      className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

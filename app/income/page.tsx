@@ -24,6 +24,7 @@ import { formatCurrency } from '../utils/currencyFormatter';
 import GraphToggle from '../components/GraphToggle';
 import { calculateIncomeGrowth, type IncomeGrowthParams, type MonthlyIncomeData } from '../utils/incomeCalculations';
 import FinancialTooltip from '../components/FinancialTooltip';
+import { saveTabState, loadTabState, IncomeGrowthCachedTabState } from '../utils/cacheUtils';
 
 export default function IncomeGrowth() {
   const [params, setParams] = useState<IncomeGrowthParams>({
@@ -35,6 +36,14 @@ export default function IncomeGrowth() {
     annualInflationRate: 6,
     taxBracket: 30
   });
+
+  // Load cached values after initial render
+  useEffect(() => {
+    const cachedState = loadTabState<IncomeGrowthCachedTabState>('income_growth');
+    if (cachedState) {
+      setParams(cachedState);
+    }
+  }, []);
 
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [incomeData, setIncomeData] = useState<MonthlyIncomeData[]>([]);
@@ -95,6 +104,18 @@ export default function IncomeGrowth() {
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
+  const handleInputChange = (field: keyof IncomeGrowthParams, value: number | string) => {
+    const newValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+    setParams(prev => {
+      const newParams = {
+        ...prev,
+        [field]: newValue,
+      };
+      saveTabState('income_growth', newParams);
+      return newParams;
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -130,22 +151,24 @@ export default function IncomeGrowth() {
                 </label>
                 <input
                   type="range"
-                  min="0"
-                  max="1000000"
+                  min="1"
+                  max="100000000"
                   step="10000"
                   value={params.initialAmount}
-                  onChange={(e) => setParams(prev => ({ ...prev, initialAmount: Number(e.target.value) }))}
+                  onChange={(e) => handleInputChange('initialAmount', e.target.value)}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                  <span>₹0</span>
-                  <span>₹10L</span>
+                  <span>₹1</span>
+                  <span>₹10Cr</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="1"
+                    max="100000000"
                     value={params.initialAmount}
-                    onChange={(e) => setParams(prev => ({ ...prev, initialAmount: Number(e.target.value) }))}
+                    onChange={(e) => handleInputChange('initialAmount', e.target.value)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -164,22 +187,24 @@ export default function IncomeGrowth() {
                 </label>
                 <input
                   type="range"
-                  min="1000"
-                  max="100000"
+                  min="1"
+                  max="1000000"
                   step="1000"
                   value={params.monthlyContribution}
-                  onChange={(e) => setParams(prev => ({ ...prev, monthlyContribution: Number(e.target.value) }))}
+                  onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                  <span>₹1,000</span>
-                  <span>₹1L</span>
+                  <span>₹1</span>
+                  <span>₹10L</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="1"
+                    max="1000000"
                     value={params.monthlyContribution}
-                    onChange={(e) => setParams(prev => ({ ...prev, monthlyContribution: Number(e.target.value) }))}
+                    onChange={(e) => handleInputChange('monthlyContribution', e.target.value)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -198,24 +223,26 @@ export default function IncomeGrowth() {
                 </label>
                 <input
                   type="range"
-                  min="4"
-                  max="15"
+                  min="0.01"
+                  max="20"
                   step="0.1"
                   value={params.annualGrowthRate}
-                  onChange={(e) => setParams(prev => ({ ...prev, annualGrowthRate: Number(e.target.value) }))}
+                  onChange={(e) => handleInputChange('annualGrowthRate', e.target.value)}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                  <span>4%</span>
-                  <span>15%</span>
+                  <span>0.01%</span>
+                  <span>20%</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
-                    value={params.annualGrowthRate}
-                    onChange={(e) => setParams(prev => ({ ...prev, annualGrowthRate: Number(e.target.value) }))}
-                    className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    min="0.01"
+                    max="20"
                     step="0.1"
+                    value={params.annualGrowthRate}
+                    onChange={(e) => handleInputChange('annualGrowthRate', e.target.value)}
+                    className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <span className="text-gray-500 sm:text-sm">%</span>
@@ -234,25 +261,24 @@ export default function IncomeGrowth() {
                 <input
                   type="range"
                   min="1"
-                  max="40"
+                  max="30"
                   value={params.timeHorizonMonths / 12}
-                  onChange={(e) => setParams(prev => ({ ...prev, timeHorizonMonths: Number(e.target.value) * 12 }))}
+                  onChange={(e) => handleInputChange('timeHorizonMonths', Number(e.target.value) * 12)}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
                   <span>1 Year</span>
-                  <span>40 Years</span>
+                  <span>30 Years</span>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <input
                     type="number"
+                    min="1"
+                    max="30"
                     value={params.timeHorizonMonths / 12}
-                    onChange={(e) => setParams(prev => ({ ...prev, timeHorizonMonths: Number(e.target.value) * 12 }))}
+                    onChange={(e) => handleInputChange('timeHorizonMonths', Number(e.target.value) * 12)}
                     className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <span className="text-gray-500 sm:text-sm">Years</span>
-                  </div>
                 </div>
               </div>
 
@@ -296,7 +322,7 @@ export default function IncomeGrowth() {
                         max="10"
                         step="0.1"
                         value={params.annualInflationRate}
-                        onChange={(e) => setParams(prev => ({ ...prev, annualInflationRate: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('annualInflationRate', Number(e.target.value))}
                         className="w-full"
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
@@ -307,7 +333,7 @@ export default function IncomeGrowth() {
                         <input
                           type="number"
                           value={params.annualInflationRate}
-                          onChange={(e) => setParams(prev => ({ ...prev, annualInflationRate: Number(e.target.value) }))}
+                          onChange={(e) => handleInputChange('annualInflationRate', Number(e.target.value))}
                           className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                           step="0.1"
                         />
@@ -327,7 +353,7 @@ export default function IncomeGrowth() {
                       </label>
                       <select
                         value={params.taxBracket}
-                        onChange={(e) => setParams(prev => ({ ...prev, taxBracket: Number(e.target.value) }))}
+                        onChange={(e) => handleInputChange('taxBracket', Number(e.target.value))}
                         className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                       >
                         <option value={0}>No Tax (0%)</option>

@@ -20,6 +20,7 @@ import {
   calculateLoanSummary,
   formatIndianCurrency
 } from '../utils/loanCalculations';
+import { saveTabState, loadTabState, LoanCachedTabState } from '../utils/cacheUtils';
 
 export default function LoanComparison() {
   const [scenario1, setScenario1] = useState<LoanParams>({
@@ -39,6 +40,19 @@ export default function LoanComparison() {
     extraPaymentFrequency: 'monthly',
     extraPaymentStartMonth: 1,
   });
+
+  // Load cached values after initial render
+  useEffect(() => {
+    const cachedState1 = loadTabState<LoanCachedTabState>('comparison_scenario1');
+    const cachedState2 = loadTabState<LoanCachedTabState>('comparison_scenario2');
+    
+    if (cachedState1) {
+      setScenario1(cachedState1);
+    }
+    if (cachedState2) {
+      setScenario2(cachedState2);
+    }
+  }, []);
 
   const [enableExtraPayment1, setEnableExtraPayment1] = useState(false);
   const [enableExtraPayment2, setEnableExtraPayment2] = useState(false);
@@ -65,10 +79,14 @@ export default function LoanComparison() {
 
   const handleInputChange = (scenario: '1' | '2', field: keyof LoanParams, value: number | string) => {
     const setter = scenario === '1' ? setScenario1 : setScenario2;
-    setter(prev => ({
-      ...prev,
-      [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
-    }));
+    setter(prev => {
+      const newParams = {
+        ...prev,
+        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
+      };
+      saveTabState(`comparison_scenario${scenario}`, newParams);
+      return newParams;
+    });
   };
 
   const getComparisonGraphData = () => {
@@ -111,7 +129,7 @@ export default function LoanComparison() {
             <input
               type="range"
               min="100000"
-              max="50000000"
+              max="100000000"
               step="100000"
               value={params.loanAmount}
               onChange={(e) => handleChange('loanAmount', e.target.value)}

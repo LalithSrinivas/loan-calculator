@@ -25,7 +25,7 @@ import FinancialTooltip from './FinancialTooltip';
 
 interface AdvancedAnalysisProps {
   loanAmount: number;
-  loanInterestRate: number;
+  annualInterestRate: number;
   loanTenureMonths: number;
   monthlyEMI: number;
   initialAmount: number;
@@ -37,7 +37,7 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function AdvancedAnalysis({
   loanAmount,
-  loanInterestRate,
+  annualInterestRate,
   loanTenureMonths,
   monthlyEMI,
   initialAmount,
@@ -50,7 +50,7 @@ export default function AdvancedAnalysis({
   const [retirementInYears, setRetirementInYears] = useState(30);
   const metrics = calculateAdvancedMetrics({
     loanAmount,
-    loanInterestRate,
+    loanInterestRate: annualInterestRate,
     loanTenureMonths,
     monthlyEMI,
     initialAmount,
@@ -64,7 +64,7 @@ export default function AdvancedAnalysis({
   const taxSavings = calculateTaxSavings(annualInterestPaid);
   const roi = calculateROI({
     loanAmount: loanAmount,
-    loanInterestRate: loanInterestRate,
+    loanInterestRate: annualInterestRate,
     loanTenureMonths: loanTenureMonths,
     monthlyEMI: monthlyEMI,
     initialAmount: initialAmount,
@@ -88,7 +88,7 @@ export default function AdvancedAnalysis({
 
   const investmentVsPrePayment = comparePrepaymentVsInvestment(
     loanAmount,
-    loanInterestRate,
+    annualInterestRate,
     loanTenureMonths,
     monthlyInvestment,
     'monthly',
@@ -441,7 +441,7 @@ export default function AdvancedAnalysis({
                 const monthlyRate = expectedReturn / 12 / 100;
                 const loanBalance = calculateRemainingLoanBalance(
                   loanAmount,
-                  loanInterestRate,
+                  annualInterestRate,
                   loanTenureMonths,
                   month
                 );

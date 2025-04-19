@@ -19,11 +19,12 @@ import { calculateIncomeGrowth } from '../utils/incomeCalculations';
 import AdvancedAnalysis from '../components/AdvancedAnalysis';
 import { Switch } from '@headlessui/react';
 import { calculateEMI } from '../utils/loanCalculations';
+import { saveTabState, loadTabState } from '../utils/cacheUtils';
 
 interface CompoundScenarioParams {
   // Loan Parameters
   loanAmount: number;
-  loanInterestRate: number;
+  annualInterestRate: number;
   loanTenureMonths: number;
   extraPayment: number;
   extraPaymentFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
@@ -33,8 +34,6 @@ interface CompoundScenarioParams {
   monthlyContribution: number;
   contributionFrequency: 'monthly' | 'annually';
   annualGrowthRate: number;
-  
-  // Common Parameters
   timeHorizonMonths: number;
 }
 
@@ -42,7 +41,7 @@ export default function CompoundScenario() {
   const [params, setParams] = useState<CompoundScenarioParams>({
     // Loan defaults
     loanAmount: 2000000,
-    loanInterestRate: 8.5,
+    annualInterestRate: 8.5,
     loanTenureMonths: 180,
     extraPayment: 0,
     extraPaymentFrequency: 'monthly' as const,
@@ -53,10 +52,19 @@ export default function CompoundScenario() {
     monthlyContribution: 10000,
     contributionFrequency: 'monthly',
     annualGrowthRate: 12,
-    
-    // Time horizon defaults to loan tenure
-    timeHorizonMonths: 180
+    timeHorizonMonths: 180,
   });
+
+  // Load cached values after initial render
+  useEffect(() => {
+    const cachedState = loadTabState('compound_calculator');
+    if (cachedState) {
+      setParams(prev => ({
+        ...prev,
+        ...cachedState
+      }));
+    }
+  }, []);
 
   const [combinedData, setCombinedData] = useState<any[]>([]);
   const [summary, setSummary] = useState({
@@ -70,17 +78,21 @@ export default function CompoundScenario() {
   const [isAdvanced, setIsAdvanced] = useState(false);
 
   const handleInputChange = (field: keyof CompoundScenarioParams, value: number | string) => {
-    setParams(prev => ({
-      ...prev,
-      [field]: typeof prev[field] === 'number' ? parseFloat(value as string) || 0 : value,
-    }));
+    setParams(prev => {
+      const newParams = {
+        ...prev,
+        [field]: typeof prev[field] === 'number' ? parseFloat(value as string) || 0 : value,
+      };
+      saveTabState('compound_calculator', newParams);
+      return newParams;
+    });
   };
 
   useEffect(() => {
     // Calculate loan schedule
     const loanSchedule = calculateLoanSchedule({
       principal: params.loanAmount,
-      annualRate: params.loanInterestRate,
+      annualRate: params.annualInterestRate,
       tenureMonths: params.loanTenureMonths,
       extraPayment: params.extraPayment,
       extraPaymentFrequency: params.extraPaymentFrequency
@@ -189,22 +201,22 @@ export default function CompoundScenario() {
                     </label>
                     <input
                       type="range"
-                      min="5"
-                      max="15"
+                      min="1"
+                      max="25"
                       step="0.1"
-                      value={params.loanInterestRate}
-                      onChange={(e) => handleInputChange('loanInterestRate', e.target.value)}
+                      value={params.annualInterestRate}
+                      onChange={(e) => handleInputChange('annualInterestRate', e.target.value)}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                      <span>5%</span>
-                      <span>15%</span>
+                      <span>1%</span>
+                      <span>25%</span>
                     </div>
                     <div className="relative rounded-md shadow-sm">
                       <input
                         type="number"
-                        value={params.loanInterestRate}
-                        onChange={(e) => handleInputChange('loanInterestRate', e.target.value)}
+                        value={params.annualInterestRate}
+                        onChange={(e) => handleInputChange('annualInterestRate', e.target.value)}
                         className="block w-full rounded-md border-gray-300 pl-3 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                         step="0.1"
                       />
@@ -221,7 +233,7 @@ export default function CompoundScenario() {
                     </label>
                     <input
                       type="range"
-                      min="12"
+                      min="1"
                       max="360"
                       step="12"
                       value={params.loanTenureMonths}
@@ -234,7 +246,7 @@ export default function CompoundScenario() {
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                      <span>1 Year</span>
+                      <span>1 Month</span>
                       <span>30 Years</span>
                     </div>
                     <div className="relative rounded-md shadow-sm">
@@ -286,7 +298,7 @@ export default function CompoundScenario() {
                     >
                       <option value="monthly">Monthly</option>
                       <option value="quarterly">Quarterly</option>
-                      <option value="semiannually">Semi-annually</option>
+                      <option value="semiannually">Semiannually</option>
                       <option value="annually">Annually</option>
                     </select>
                   </div>
@@ -617,11 +629,11 @@ export default function CompoundScenario() {
           {isAdvanced && (
             <AdvancedAnalysis
               loanAmount={params.loanAmount}
-              loanInterestRate={params.loanInterestRate}
+              annualInterestRate={params.annualInterestRate}
               loanTenureMonths={params.loanTenureMonths}
               monthlyEMI={calculateEMI({
                 loanAmount: params.loanAmount,
-                annualInterestRate: params.loanInterestRate,
+                annualInterestRate: params.annualInterestRate,
                 loanTenureMonths: params.loanTenureMonths,
                 extraPayment: params.extraPayment,
                 extraPaymentFrequency: params.extraPaymentFrequency,
