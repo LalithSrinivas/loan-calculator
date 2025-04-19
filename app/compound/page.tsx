@@ -32,7 +32,7 @@ interface CompoundScenarioParams {
   // Income Parameters
   initialAmount: number;
   monthlyContribution: number;
-  contributionFrequency: 'monthly' | 'annually';
+  contributionFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
   annualGrowthRate: number;
   timeHorizonMonths: number;
 }
