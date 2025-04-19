@@ -51,21 +51,21 @@ export function generateAmortizationSchedule(params: LoanParams): AmortizationRo
     if (month >= params.extraPaymentStartMonth) {
       switch (params.extraPaymentFrequency) {
         case 'monthly':
-          extraPayment = params.extraPayment;
+          extraPayment = Number(params.extraPayment);
           break;
         case 'quarterly':
-          if ((month - params.extraPaymentStartMonth) % 3 === 0) {
-            extraPayment = params.extraPayment;
+          if (month !== 1 && (month - params.extraPaymentStartMonth) % 3 === 0) {
+            extraPayment = Number(params.extraPayment);
           }
           break;
         case 'semiannually':
-          if ((month - params.extraPaymentStartMonth) % 6 === 0) {
-            extraPayment = params.extraPayment;
+          if (month !== 1 && (month - params.extraPaymentStartMonth) % 6 === 0) {
+            extraPayment = Number(params.extraPayment);
           }
           break;
         case 'annually':
-          if ((month - params.extraPaymentStartMonth) % 12 === 0) {
-            extraPayment = params.extraPayment;
+          if (month !== 1 && (month - params.extraPaymentStartMonth) % 12 === 0) {
+            extraPayment = Number(params.extraPayment);
           }
           break;
       }
@@ -234,4 +234,14 @@ export function getExtraPaymentImpact(params: LoanParams): {
       interestSaved: summaryWithoutExtraPayment.totalInterest - summary.totalInterest,
       tenureReduced: summaryWithoutExtraPayment.totalTenureMonths - summary.totalTenureMonths
     };
+}
+
+export function monthsToYears(months: number): number {
+  return Math.floor(months / 12);
+}
+
+export function monthsToYearsAndMonths(months: number): string {
+  const years = Math.floor(months / 12);
+  const remainingMonths = months % 12;
+  return `${years} years ${remainingMonths} months`;
 }

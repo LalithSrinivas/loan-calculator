@@ -14,7 +14,7 @@ import {
   Area
 } from 'recharts';
 import { formatCurrency } from '../utils/currencyFormatter';
-import { calculateLoanSchedule, formatIndianCurrency } from '../utils/loanCalculations';
+import { generateAmortizationSchedule, formatIndianCurrency, calculateLoanSummary } from '../utils/loanCalculations';
 import { calculateIncomeGrowth } from '../utils/incomeCalculations';
 import AdvancedAnalysis from '../components/AdvancedAnalysis';
 import { Switch } from '@headlessui/react';
@@ -72,7 +72,9 @@ export default function CompoundScenario() {
     netPositiveMonth: 0,
     finalNetPossession: 0,
     finalLoanBalance: 0,
-    finalIncomeBalance: 0
+    finalIncomeBalance: 0,
+    totalInterest: 0,
+    totalPrincipal: 0
   });
 
   const [isAdvanced, setIsAdvanced] = useState(false);
@@ -90,13 +92,16 @@ export default function CompoundScenario() {
 
   useEffect(() => {
     // Calculate loan schedule
-    const loanSchedule = calculateLoanSchedule({
-      principal: params.loanAmount,
-      annualRate: params.annualInterestRate,
-      tenureMonths: params.loanTenureMonths,
+    const loanSchedule = generateAmortizationSchedule({
+      loanAmount: params.loanAmount,
+      annualInterestRate: params.annualInterestRate,
+      loanTenureMonths: params.loanTenureMonths,
       extraPayment: params.extraPayment,
-      extraPaymentFrequency: params.extraPaymentFrequency
+      extraPaymentFrequency: params.extraPaymentFrequency,
+      extraPaymentStartMonth: 1
     });
+
+    const loanSummary = calculateLoanSummary(loanSchedule);
 
     // Calculate income growth
     const incomeGrowth = calculateIncomeGrowth({
@@ -138,7 +143,9 @@ export default function CompoundScenario() {
       netPositiveMonth: netPositiveMonth >= 0 ? netPositiveMonth : -1,
       finalNetPossession: finalData.netPossession,
       finalLoanBalance: finalData.loanBalance,
-      finalIncomeBalance: finalData.incomeBalance
+      finalIncomeBalance: finalData.incomeBalance,
+      totalInterest: loanSummary.totalInterest,
+      totalPrincipal: loanSummary.totalPayments - loanSummary.totalInterest
     });
   }, [params]);
 
@@ -234,20 +241,20 @@ export default function CompoundScenario() {
                     <input
                       type="range"
                       min="1"
-                      max="360"
-                      step="12"
+                      max="361"
+                      step="3"
                       value={params.loanTenureMonths}
                       onChange={(e) => {
                         handleInputChange('loanTenureMonths', e.target.value); 
-                        if (params.timeHorizonMonths < parseFloat(e.target.value)) {
-                          handleInputChange('timeHorizonMonths', parseFloat(e.target.value))
-                        }
+                        // if (params.timeHorizonMonths < parseFloat(e.target.value)) {
+                        //   handleInputChange('timeHorizonMonths', parseFloat(e.target.value))
+                        // }
                       }}
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
                       <span>1 Month</span>
-                      <span>30 Years</span>
+                      <span>360 Months</span>
                     </div>
                     <div className="relative rounded-md shadow-sm">
                       <input
@@ -375,6 +382,8 @@ export default function CompoundScenario() {
                       className="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     >
                       <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="semiannually">Semi-Annually</option>
                       <option value="annually">Annually</option>
                     </select>
                   </div>
@@ -413,6 +422,10 @@ export default function CompoundScenario() {
                 </div>
               </div>
 
+            </div>
+
+            {/* Results Section */}
+            <div className="space-y-8">
               {/* Time Horizon */}
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h2 className="text-2xl font-semibold mb-6">Analysis Time Horizon</h2>
@@ -422,7 +435,7 @@ export default function CompoundScenario() {
                   </label>
                   <input
                     type="range"
-                    min={params.loanTenureMonths}
+                    min="1"
                     max="360"
                     step="12"
                     value={params.timeHorizonMonths}
@@ -430,8 +443,8 @@ export default function CompoundScenario() {
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1 mb-2">
-                    <span>{Math.floor(params.loanTenureMonths/12)} Years</span>
-                    <span>30 Years</span>
+                    <span>1 Month</span>
+                    <span>360 Months</span>
                   </div>
                   <div className="relative rounded-md shadow-sm">
                     <input
@@ -446,10 +459,6 @@ export default function CompoundScenario() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* Results Section */}
-            <div className="space-y-8">
               {/* Key Metrics */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg shadow-lg p-6">
@@ -460,6 +469,8 @@ export default function CompoundScenario() {
                   <div className="mt-2 space-y-1 text-sm text-gray-600">
                     <p>Loan Balance: {formatCurrency(summary.finalLoanBalance)}</p>
                     <p>Income Balance: {formatCurrency(summary.finalIncomeBalance)}</p>
+                    <p>Total Interest Paid: {formatCurrency(summary.totalInterest)}</p>
+                    <p>Total Principal Paid: {formatCurrency(summary.totalPrincipal)}</p>
                   </div>
                 </div>
                 

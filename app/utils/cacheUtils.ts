@@ -10,7 +10,7 @@ export interface LoanCachedTabState {
 export interface IncomeGrowthCachedTabState {
   initialAmount: number;
   monthlyContribution: number;
-  contributionFrequency: 'monthly' | 'annually';
+  contributionFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
   annualGrowthRate: number;
   timeHorizonMonths: number;
   annualInflationRate?: number;
@@ -28,7 +28,7 @@ export interface CompoundScenarioCachedTabState {
   // Income Parameters
   initialAmount: number;
   monthlyContribution: number;
-  contributionFrequency: 'monthly' | 'annually';
+  contributionFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
   annualGrowthRate: number;
   timeHorizonMonths: number;
 }

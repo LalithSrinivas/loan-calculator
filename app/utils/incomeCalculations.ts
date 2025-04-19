@@ -131,7 +131,7 @@ export function formatIndianCurrency(amount: number): string {
 export interface IncomeGrowthParams {
   initialAmount: number;
   monthlyContribution: number;
-  contributionFrequency: 'monthly' | 'annually';
+  contributionFrequency: 'monthly' | 'quarterly' | 'semiannually' | 'annually';
   annualGrowthRate: number;
   timeHorizonMonths: number;
   annualInflationRate?: number;
@@ -163,7 +163,10 @@ export function calculateIncomeGrowth(params: IncomeGrowthParams): MonthlyIncome
 
   for (let month = 0; month <= params.timeHorizonMonths; month++) {
     // Add contribution if it's time
-    if (params.contributionFrequency === 'monthly' || (params.contributionFrequency === 'annually' && month % 12 === 0)) {
+    if (params.contributionFrequency === 'monthly' || 
+      (params.contributionFrequency === 'quarterly' && month % 3 === 0) ||
+      (params.contributionFrequency === 'semiannually' && month % 6 === 0) ||
+      (params.contributionFrequency === 'annually' && month % 12 === 0)) {
       const contribution = params.contributionFrequency === 'monthly' ? contributionAmount : contributionAmount * 12;
       currentAmount += contribution;
       totalContributions += contribution;

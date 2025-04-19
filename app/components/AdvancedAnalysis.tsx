@@ -122,7 +122,7 @@ export default function AdvancedAnalysis({
   return (
     <div className="space-y-8">
       {/* Economic Parameters */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           <FinancialTooltip
             term="Economic Parameters"
@@ -188,10 +188,10 @@ export default function AdvancedAnalysis({
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Financial Independence Analysis */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* <div className="bg-white rounded-lg shadow-lg p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
           <FinancialTooltip
             term="Path to Financial Independence"
@@ -231,7 +231,7 @@ export default function AdvancedAnalysis({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
      {/* Investment Strategy Comparison */}
       <div className="bg-white rounded-lg shadow-lg p-6">
@@ -427,7 +427,7 @@ export default function AdvancedAnalysis({
       </div>
 
       {/* Investment Growth Chart */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* <div className="bg-white rounded-lg shadow-lg p-6">
         <h4 className="text-lg font-medium text-gray-900 mb-4">
           <FinancialTooltip
             term="Net Possession Over Time"
@@ -502,10 +502,10 @@ export default function AdvancedAnalysis({
           <p>• Green line shows your income source growth</p>
           <p>• Blue line shows your net possession (Income - Loan)</p>
         </div>
-      </div>
+      </div> */}
 
       {/* Monthly Income Growth Chart */}
-      <div className="bg-white rounded-lg shadow-lg p-6">
+      {/* <div className="bg-white rounded-lg shadow-lg p-6">
         <h4 className="text-lg font-medium text-gray-900 mb-4">
           <FinancialTooltip
             term="Monthly Income Growth"
@@ -548,7 +548,7 @@ export default function AdvancedAnalysis({
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      </div>
+      </div> */}
 
       {/* Analysis Insights */}
       <div className="bg-white rounded-lg shadow-lg p-6">

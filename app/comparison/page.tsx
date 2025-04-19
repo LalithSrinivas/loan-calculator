@@ -18,7 +18,9 @@ import {
   calculateEMI,
   generateAmortizationSchedule,
   calculateLoanSummary,
-  formatIndianCurrency
+  formatIndianCurrency,
+  getExtraPaymentImpact,
+  monthsToYearsAndMonths
 } from '../utils/loanCalculations';
 import { saveTabState, loadTabState, LoanCachedTabState } from '../utils/cacheUtils';
 
@@ -82,7 +84,7 @@ export default function LoanComparison() {
     setter(prev => {
       const newParams = {
         ...prev,
-        [field]: typeof value === 'string' ? parseFloat(value) || 0 : value,
+        [field]: typeof value === 'string' ? parseFloat(value) || value : value,
       };
       saveTabState(`comparison_scenario${scenario}`, newParams);
       return newParams;
@@ -275,7 +277,17 @@ export default function LoanComparison() {
                 <p>Monthly EMI: {formatIndianCurrency(calculateEMI(scenario1))}</p>
                 <p>Total Interest: {formatIndianCurrency(summary1.totalInterest)}</p>
                 <p>Total Amount: {formatIndianCurrency(summary1.totalPayments)}</p>
-                <p>Loan Tenure: {summary1.totalTenureMonths} months</p>
+                <p>Loan Tenure: {monthsToYearsAndMonths(summary1.totalTenureMonths)}</p>
+                {summary1.totalExtraPayments > 0 && (
+                  <>
+                    <p>Interest Saved: {formatIndianCurrency(getExtraPaymentImpact({
+                      ...scenario1,
+                    }).interestSaved)}</p>
+                  <p>Tenure Reduced: {monthsToYearsAndMonths(getExtraPaymentImpact({
+                    ...scenario1,
+                    }).tenureReduced)}</p>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -287,7 +299,17 @@ export default function LoanComparison() {
                 <p>Monthly EMI: {formatIndianCurrency(calculateEMI(scenario2))}</p>
                 <p>Total Interest: {formatIndianCurrency(summary2.totalInterest)}</p>
                 <p>Total Amount: {formatIndianCurrency(summary2.totalPayments)}</p>
-                <p>Loan Tenure: {summary2.totalTenureMonths} months</p>
+                <p>Loan Tenure: {monthsToYearsAndMonths(summary2.totalTenureMonths)}</p>
+                {summary2.totalExtraPayments > 0 && (
+                  <>
+                    <p>Interest Saved: {formatIndianCurrency(getExtraPaymentImpact({
+                      ...scenario2,
+                    }).interestSaved)}</p>
+                  <p>Tenure Reduced: {monthsToYearsAndMonths(getExtraPaymentImpact({
+                    ...scenario2,
+                    }).tenureReduced)}</p>
+                  </>
+                )}
               </div>
             )}
           </div>

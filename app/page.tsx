@@ -108,14 +108,17 @@ export default function LoanCalculator() {
   const getTenureImpact = () => {
     const frequencies: ('monthly' | 'quarterly' | 'semiannually' | 'annually')[] = 
       ['monthly', 'quarterly', 'semiannually', 'annually'];
-    return frequencies.map(freq => {
-      const adjustedParams = { ...params, extraPaymentFrequency: freq };
+    const paramsWithoutExtraPayment = { ...params, extraPayment: 0 };
+    const summaryWithoutExtraPayment = calculateLoanSummary(generateAmortizationSchedule(paramsWithoutExtraPayment));
+    const extraPayments = [params.extraPayment, params.extraPayment * 3, params.extraPayment * 6, params.extraPayment * 12];
+    return frequencies.map((freq, index) => {
+      const adjustedParams = { ...params, extraPaymentFrequency: freq, extraPayment: extraPayments[index] };
       const adjustedSchedule = generateAmortizationSchedule(adjustedParams);
       const adjustedSummary = calculateLoanSummary(adjustedSchedule);
       return {
         frequency: freq.charAt(0).toUpperCase() + freq.slice(1),
         months: adjustedSchedule.length,
-        interestSaved: summary ? summary.totalInterest - adjustedSummary.totalInterest : 0
+        interestSaved: summaryWithoutExtraPayment ? summaryWithoutExtraPayment.totalInterest - adjustedSummary.totalInterest : 0
       };
     });
   };
@@ -525,9 +528,9 @@ export default function LoanCalculator() {
                         <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                         <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                         <Tooltip 
-                          formatter={(value: number, name: string) => 
-                            name === 'months' ? `${value} months` : formatCurrency(value)
-                          }
+                          formatter={(value: number, name: string) => {
+                            return name === 'Loan Tenure' ? `${value} months` : formatCurrency(value);
+                          }}
                         />
                         <Bar yAxisId="left" dataKey="months" fill="#8884d8" name="Loan Tenure" />
                         <Bar yAxisId="right" dataKey="interestSaved" fill="#82ca9d" name="Interest Saved" />
